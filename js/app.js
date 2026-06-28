@@ -37,7 +37,7 @@ function renderBandeirinhas() {
 }
 
 // ============================================================
-//  TABS — salva aba ativa
+//  TABS
 // ============================================================
 function mostrarTab(aba) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -45,6 +45,7 @@ function mostrarTab(aba) {
   document.getElementById(`tab-${aba}`)?.classList.add('active');
   document.querySelector(`.tab-btn[data-tab="${aba}"]`)?.classList.add('active');
   Storage.setAbaAtiva(aba);
+  if (aba === 'chaveamento') renderChaveamento();
 }
 
 // ============================================================
@@ -104,8 +105,8 @@ function renderGrupos() {
                 ${t2.flag}
                 <span class="nome-time" title="${t2.nome}">${t2.nome}</span>
               </span>
-              <button class="btn-limpar-jogo-grupo" 
-                onclick="limparJogoGrupo(${gi},${ji})" 
+              <button class="btn-limpar-jogo-grupo"
+                onclick="limparJogoGrupo(${gi},${ji})"
                 title="Limpar Placar">✕</button>
             </div>
           </td>
@@ -181,7 +182,6 @@ function atualizarClassif(gi) {
     const cpos = document.getElementById(`cpos-${gi}-${ti}`);
     if (!row || !cpos) return;
 
-    // Atualiza números
     cpos.textContent = pos + 1;
     document.getElementById(`cj-${gi}-${ti}`).textContent   = s.j;
     document.getElementById(`cv-${gi}-${ti}`).textContent   = s.v;
@@ -191,49 +191,23 @@ function atualizarClassif(gi) {
     document.getElementById(`cpts-${gi}-${ti}`).textContent = s.pts;
     row.style.order = pos;
 
-    // ── Define visual ──
-
     if (classificados1.has(ti)) {
-      // 1º garantido matematicamente — verde escuro + ✓
-      // (antes OU depois da 3ª rodada)
       row.className = 'classif-row-item status-1';
       cpos.innerHTML = `${pos+1}<span class="status-badge badge-1"> ✓</span>`;
-
     } else if (classificados2.has(ti)) {
-      // 2º garantido — só aparece após grupo fechado
       row.className = 'classif-row-item status-2';
       cpos.innerHTML = `${pos+1}<span class="status-badge badge-2"> ✓</span>`;
-
     } else if (classificados3.has(ti)) {
-      // 3º garantido — só aparece após grupo fechado
       row.className = 'classif-row-item status-3';
       cpos.innerHTML = `${pos+1}<span class="status-badge badge-3"> ~</span>`;
-
     } else if (eliminados.has(ti)) {
-      // Eliminado matematicamente — cinza + ✗
-      // (antes OU depois da 3ª rodada)
       row.className = 'classif-row-item status-elim';
       cpos.innerHTML = `${pos+1}<span class="status-badge badge-elim"> ✗</span>`;
-
     } else {
-      // Grupo ainda aberto — sem símbolo, só cor de posição atual
-      if (pos === 0) {
-        // 1º atual, mas pode ser alcançado
-        row.className = 'classif-row-item pos-1';
-        cpos.textContent = pos + 1;
-      } else if (pos === 1) {
-        // 2º atual
-        row.className = 'classif-row-item pos-2';
-        cpos.textContent = pos + 1;
-      } else if (pos === 2) {
-        // 3º atual
-        row.className = 'classif-row-item pos-3';
-        cpos.textContent = pos + 1;
-      } else {
-        // 4º atual
-        row.className = 'classif-row-item pos-4';
-        cpos.textContent = pos + 1;
-      }
+      if (pos === 0)      { row.className = 'classif-row-item pos-1'; cpos.textContent = pos + 1; }
+      else if (pos === 1) { row.className = 'classif-row-item pos-2'; cpos.textContent = pos + 1; }
+      else if (pos === 2) { row.className = 'classif-row-item pos-3'; cpos.textContent = pos + 1; }
+      else                { row.className = 'classif-row-item pos-4'; cpos.textContent = pos + 1; }
     }
 
     rows.style.display = 'flex';
@@ -241,18 +215,9 @@ function atualizarClassif(gi) {
   });
 }
 
-
-function getTerceirosMatematicos(gi) {
-  // Por ora retorna Set vazio — será expandido quando tivermos
-  // lógica de comparação entre grupos
-  return new Set();
-}
-
-
 // ============================================================
 //  CONFIRMAR LIMPAR FASE
 // ============================================================
-
 function confirmarLimparFase(tipo) {
   const modal = document.getElementById('modal-limpar-fase');
   const txt   = document.getElementById('modal-limpar-fase-txt');
@@ -286,18 +251,10 @@ function confirmarLimparRodada(prefixo, dados) {
   modal.classList.remove('hidden');
 }
 
-
 // ============================================================
 //  LIMPAR / ATUALIZAR POR FASE
 // ============================================================
-
-// ---- FASE DE GRUPOS ----
 function limparFaseGrupos() {
-  const resultados = Storage.getResultados();
-  Object.keys(resultados).forEach(key => {
-    if (key.startsWith('g')) delete resultados[key];
-  });
-  // Salva objeto vazio de resultados
   Storage.importState({ resultados: {} });
   renderGrupos();
   rodarChaveamentoCompleto();
@@ -306,7 +263,6 @@ function limparFaseGrupos() {
 
 function atualizarFaseGrupos() {
   rodarChaveamentoCompleto();
-  // Re-renderiza grupos para refletir mudanças
   renderGrupos();
   toast('↺ Fase de grupos atualizada!');
 }
@@ -322,7 +278,6 @@ function limparGrupo(gi) {
   toast(`🗑️ Grupo ${grupo.letra} limpo!`);
 }
 
-// ---- MATA-MATA COMPLETO ----
 function limparFaseMataMata() {
   Storage.setMataMataCompleto({});
   renderMataMata();
@@ -338,14 +293,11 @@ function atualizarFaseMataMata() {
   toast('↺ Fase eliminatória atualizada!');
 }
 
-// ---- FASES INDIVIDUAIS DO MATA-MATA ----
 function limparRodadaMM(prefixo, dados) {
   const mm = Storage.getMataMata();
   dados.forEach((_, i) => {
     const key = `${prefixo}_${i}`;
-    if (mm[key]) {
-      mm[key] = { autoFilled1: false, autoFilled2: false };
-    }
+    if (mm[key]) mm[key] = { autoFilled1: false, autoFilled2: false };
   });
   Storage.setMataMataCompleto(mm);
   renderMataMata();
@@ -373,10 +325,8 @@ function atualizarRodadaMM(prefixo, dados) {
   toast('↺ Rodada atualizada!');
 }
 
-// ---- JOGO INDIVIDUAL DA FASE DE GRUPOS ----
 function limparJogoGrupo(gi, ji) {
   Storage.setResultado(`g${gi}_j${ji}`, null, null);
-  // Atualiza visual
   const v1 = document.getElementById(`g${gi}_j${ji}_1`);
   const v2 = document.getElementById(`g${gi}_j${ji}_2`);
   if (v1) v1.value = '';
@@ -446,17 +396,14 @@ function criarCardMM(key, cfg, cor) {
 }
 
 function refreshJogoMM(key) {
-  // Não apaga resultados, só força re-checagem do chaveamento
   const mm = Storage.getMataMata();
   if (!mm[key]) return;
-  // Remove autoFilled para forçar reavaliação
   mm[key].autoFilled1 = false;
   mm[key].autoFilled2 = false;
   mm[key].t1 = '';
   mm[key].t2 = '';
   Storage.setMataMataCompleto(mm);
 
-  // Limpa só os selects de time, mantém placar
   const t1El = document.getElementById(`mm-t1-${key}`);
   const t2El = document.getElementById(`mm-t2-${key}`);
   const f1El = document.getElementById(`mm-flag1-${key}`);
@@ -477,40 +424,39 @@ function limparJogoMM(key) {
   mm[key] = { autoFilled1: false, autoFilled2: false };
   Storage.setMataMataCompleto(mm);
 
-  // Limpa DOM
-  const t1El = document.getElementById(`mm-t1-${key}`);
-  const t2El = document.getElementById(`mm-t2-${key}`);
-  const g1El = document.getElementById(`mm-g1-${key}`);
-  const g2El = document.getElementById(`mm-g2-${key}`);
-  const p1El = document.getElementById(`mm-p1-${key}`);
-  const p2El = document.getElementById(`mm-p2-${key}`);
-  const f1El = document.getElementById(`mm-flag1-${key}`);
-  const f2El = document.getElementById(`mm-flag2-${key}`);
-  const n1El = document.getElementById(`mm-pen-nome1-${key}`);
-  const n2El = document.getElementById(`mm-pen-nome2-${key}`);
+  const els = {
+    t1: document.getElementById(`mm-t1-${key}`),
+    t2: document.getElementById(`mm-t2-${key}`),
+    g1: document.getElementById(`mm-g1-${key}`),
+    g2: document.getElementById(`mm-g2-${key}`),
+    p1: document.getElementById(`mm-p1-${key}`),
+    p2: document.getElementById(`mm-p2-${key}`),
+    f1: document.getElementById(`mm-flag1-${key}`),
+    f2: document.getElementById(`mm-flag2-${key}`),
+    n1: document.getElementById(`mm-pen-nome1-${key}`),
+    n2: document.getElementById(`mm-pen-nome2-${key}`),
+  };
 
-  if (t1El) { t1El.value = ''; t1El.classList.remove('auto-filled'); }
-  if (t2El) { t2El.value = ''; t2El.classList.remove('auto-filled'); }
-  if (g1El) g1El.value = '';
-  if (g2El) g2El.value = '';
-  if (p1El) p1El.value = '';
-  if (p2El) p2El.value = '';
-  if (f1El) f1El.innerHTML = '🏳️';
-  if (f2El) f2El.innerHTML = '🏳️';
-  if (n1El) n1El.textContent = '–';
-  if (n2El) n2El.textContent = '–';
+  if (els.t1) { els.t1.value = ''; els.t1.classList.remove('auto-filled'); }
+  if (els.t2) { els.t2.value = ''; els.t2.classList.remove('auto-filled'); }
+  if (els.g1) els.g1.value = '';
+  if (els.g2) els.g2.value = '';
+  if (els.p1) els.p1.value = '';
+  if (els.p2) els.p2.value = '';
+  if (els.f1) els.f1.innerHTML = '🏳️';
+  if (els.f2) els.f2.innerHTML = '🏳️';
+  if (els.n1) els.n1.textContent = '–';
+  if (els.n2) els.n2.textContent = '–';
 
-  // Tenta auto-preencher de volta se grupo já fechou
   rodarChaveamentoCompleto();
   propagarVencedoresMM();
   atualizarCampeaoEPodio();
   toast('🧹 Jogo limpo!');
 }
 
-
 function renderMataMata() {
   const fases = [
-    { id: 'mm-32avos',  dados: FASE_16_AVOS,      prefixo: '32avos'  },
+    { id: 'mm-32avos',  dados: FASE_16_AVOS,     prefixo: '32avos'  },
     { id: 'mm-oitavas', dados: OITAVAS_DE_FINAL,  prefixo: 'oitavas' },
     { id: 'mm-quartas', dados: QUARTAS_DE_FINAL,  prefixo: 'quartas' },
     { id: 'mm-semis',   dados: SEMIFINAIS,         prefixo: 'semis'   },
@@ -528,7 +474,6 @@ function renderMataMata() {
     }).join('');
   });
 
-  // Restaurar flags
   const mm = Storage.getMataMata();
   Object.keys(mm).forEach(key => {
     const saved = mm[key];
@@ -542,25 +487,18 @@ function onMMSelectChange(key) {
   const t1 = t1El?.value || '';
   const t2 = t2El?.value || '';
 
-  // Se escolheu opção vazia (nulo), remove o autoFilled
-  // para permitir que o auto-preenchimento volte
   const mm = Storage.getMataMata();
   if (!mm[key]) mm[key] = {};
 
   if (!t1) { mm[key].t1 = ''; mm[key].autoFilled1 = false; }
   if (!t2) { mm[key].t2 = ''; mm[key].autoFilled2 = false; }
-
-  // Se escolheu um time manualmente (não vazio), marca como manual
   if (t1 && t1El?.tagName === 'SELECT') mm[key].autoFilled1 = false;
   if (t2 && t2El?.tagName === 'SELECT') mm[key].autoFilled2 = false;
 
   Storage.setMataMataCompleto(mm);
   onMMChange(key);
 
-  // Se voltou pro vazio, roda o chaveamento pra tentar auto-preencher
-  if (!t1 || !t2) {
-    rodarChaveamentoCompleto();
-  }
+  if (!t1 || !t2) rodarChaveamentoCompleto();
 }
 
 function onMMChange(key) {
@@ -571,9 +509,8 @@ function onMMChange(key) {
   const p1 = document.getElementById(`mm-p1-${key}`)?.value;
   const p2 = document.getElementById(`mm-p2-${key}`)?.value;
 
-  Storage.setMataMata(key, { 
+  Storage.setMataMata(key, {
     t1, t2, g1, g2, p1, p2,
-    // Preserva os flags autoFilled do storage atual
     autoFilled1: Storage.getMataMata()[key]?.autoFilled1 ?? false,
     autoFilled2: Storage.getMataMata()[key]?.autoFilled2 ?? false,
   });
@@ -598,13 +535,11 @@ function getFlagByName(nome) {
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z0-9]/g, '');
   const n = norm(nome);
-  // Busca exata primeiro
   for (const g of GRUPOS) {
     for (const t of g.times) {
       if (norm(t.nome) === n) return t.flag;
     }
   }
-  // Só depois busca parcial com mínimo de 5 caracteres
   if (n.length >= 5) {
     for (const g of GRUPOS) {
       for (const t of g.times) {
@@ -622,8 +557,9 @@ function atualizarFlagMM(key, t1, t2) {
   if (f1) f1.innerHTML = getFlagByName(t1);
   if (f2) f2.innerHTML = getFlagByName(t2);
 }
+
 // ============================================================
-//  CHAVEAMENTO COMPLETO — usa getClassificados32() do classificacao.js
+//  CHAVEAMENTO COMPLETO — TABELA_495 (Anexo C oficial FIFA)
 // ============================================================
 function rodarChaveamentoCompleto() {
   const mm = Storage.getMataMata();
@@ -656,7 +592,7 @@ function rodarChaveamentoCompleto() {
     }
   });
 
-  // ── 3ºs colocados via TABELA_495 (Anexo C oficial FIFA) ──
+  // 3ºs colocados via TABELA_495 (Anexo C oficial FIFA)
   const melhores3 = Classificacao.getMelhoresTerceiros()
     .filter(t => {
       const gi = GRUPOS.findIndex(g => g.letra === t.grupo);
@@ -666,20 +602,15 @@ function rodarChaveamentoCompleto() {
       });
     });
 
-  // Mapa: posição no array r da TABELA_495 → índice em FASE_16_AVOS
   // Colunas do Anexo C (ordem oficial FIFA): [1A, 1B, 1D, 1E, 1G, 1I, 1K, 1L]
-  // Jogos correspondentes:  J79,J85,J81,J74,J82,J77,J87,J80
-  // Índices em FASE_16_AVOS: 6,  12,  8,   1,  9,   4,  14,  7
+  // Índices em FASE_16_AVOS:                   6,  12,  8,   1,  9,   4,  14,  7
   const SLOTS_3 = [6, 12, 8, 1, 9, 4, 14, 7];
-
-  const terceirosSlotTime = {}; // índice FASE_16_AVOS → time
+  const terceirosSlotTime = {};
 
   if (melhores3.length === 8) {
     const letrasClassificadas = melhores3.map(t => t.grupo).sort().join('');
     const entrada = TABELA_495.find(e => e.g === letrasClassificadas);
-
     if (entrada) {
-      // entrada.r[i] = letra do grupo cujo 3º vai para SLOTS_3[i]
       entrada.r.forEach((letraGrupo, i) => {
         const slotIdx = SLOTS_3[i];
         const terceiro = melhores3.find(t => t.grupo === letraGrupo);
@@ -788,18 +719,13 @@ function propagarVencedoresMM() {
         const nomeKey = lado === 0 ? 't1' : 't2';
         const autoKey = lado === 0 ? 'autoFilled1' : 'autoFilled2';
 
-        // Não sobrescreve edição manual
         if (mm[destKey][nomeKey] && !mm[destKey][autoKey]) return;
 
         const savedOrigem = mm[origemKey] || {};
-        const g1 = savedOrigem.g1 != null && savedOrigem.g1 !== ''
-          ? parseInt(savedOrigem.g1) : null;
-        const g2 = savedOrigem.g2 != null && savedOrigem.g2 !== ''
-          ? parseInt(savedOrigem.g2) : null;
-        const p1 = savedOrigem.p1 != null && savedOrigem.p1 !== ''
-          ? parseInt(savedOrigem.p1) : null;
-        const p2 = savedOrigem.p2 != null && savedOrigem.p2 !== ''
-          ? parseInt(savedOrigem.p2) : null;
+        const g1 = savedOrigem.g1 != null && savedOrigem.g1 !== '' ? parseInt(savedOrigem.g1) : null;
+        const g2 = savedOrigem.g2 != null && savedOrigem.g2 !== '' ? parseInt(savedOrigem.g2) : null;
+        const p1 = savedOrigem.p1 != null && savedOrigem.p1 !== '' ? parseInt(savedOrigem.p1) : null;
+        const p2 = savedOrigem.p2 != null && savedOrigem.p2 !== '' ? parseInt(savedOrigem.p2) : null;
         const t1 = savedOrigem.t1 || '';
         const t2 = savedOrigem.t2 || '';
 
@@ -807,7 +733,6 @@ function propagarVencedoresMM() {
         const flagEl  = document.getElementById(`mm-flag${lado+1}-${destKey}`);
         const penNome = document.getElementById(`mm-pen-nome${lado+1}-${destKey}`);
 
-        // Se não tem placar, limpa o destino
         if (!t1 || !t2 || g1 === null || g2 === null) {
           if (mm[destKey][autoKey]) {
             if (campoEl) { campoEl.value = ''; campoEl.classList.remove('auto-filled'); }
@@ -819,33 +744,25 @@ function propagarVencedoresMM() {
           return;
         }
 
-        // Determina vencedor ou perdedor
-        let escolhido = null;
-
         const vencedor = () => {
           if (g1 > g2) return { nome: t1, flag: getFlagByName(t1) };
           if (g2 > g1) return { nome: t2, flag: getFlagByName(t2) };
-          // Empate: usa pênaltis
           if (p1 !== null && p2 !== null && p1 !== p2) {
-            return p1 > p2
-              ? { nome: t1, flag: getFlagByName(t1) }
-              : { nome: t2, flag: getFlagByName(t2) };
+            return p1 > p2 ? { nome: t1, flag: getFlagByName(t1) } : { nome: t2, flag: getFlagByName(t2) };
           }
-          return null; // ainda sem definição (empate sem pênaltis)
+          return null;
         };
 
         const perdedor = () => {
           if (g1 > g2) return { nome: t2, flag: getFlagByName(t2) };
           if (g2 > g1) return { nome: t1, flag: getFlagByName(t1) };
           if (p1 !== null && p2 !== null && p1 !== p2) {
-            return p1 > p2
-              ? { nome: t2, flag: getFlagByName(t2) }
-              : { nome: t1, flag: getFlagByName(t1) };
+            return p1 > p2 ? { nome: t2, flag: getFlagByName(t2) } : { nome: t1, flag: getFlagByName(t1) };
           }
           return null;
         };
 
-        escolhido = ehVencedor ? vencedor() : perdedor();
+        const escolhido = ehVencedor ? vencedor() : perdedor();
 
         if (escolhido) {
           if (campoEl) { campoEl.value = escolhido.nome; campoEl.classList.add('auto-filled'); }
@@ -854,7 +771,6 @@ function propagarVencedoresMM() {
           mm[destKey][nomeKey] = escolhido.nome;
           mm[destKey][autoKey] = true;
         } else {
-          // Empate sem pênaltis definidos — limpa
           if (mm[destKey][autoKey]) {
             if (campoEl) { campoEl.value = ''; campoEl.classList.remove('auto-filled'); }
             if (flagEl)  flagEl.innerHTML = '🏳️';
@@ -877,7 +793,6 @@ function propagarVencedoresMM() {
 function atualizarCampeaoEPodio() {
   const mm = Storage.getMataMata();
 
-  // ---- Campeão e Vice (jogo 104 = final_0) ----
   const final = mm['final_0'] || {};
   const g1f = final.g1 != null && final.g1 !== '' ? parseInt(final.g1) : null;
   const g2f = final.g2 != null && final.g2 !== '' ? parseInt(final.g2) : null;
@@ -885,24 +800,21 @@ function atualizarCampeaoEPodio() {
   const p2f = final.p2 != null && final.p2 !== '' ? parseInt(final.p2) : null;
 
   let primeiro = '', segundo = '';
-
   if (final.t1 && final.t2 && g1f !== null && g2f !== null) {
-    if (g1f > g2f) { primeiro = final.t1; segundo = final.t2; }
+    if (g1f > g2f)      { primeiro = final.t1; segundo = final.t2; }
     else if (g2f > g1f) { primeiro = final.t2; segundo = final.t1; }
     else if (p1f !== null && p2f !== null && p1f !== p2f) {
       if (p1f > p2f) { primeiro = final.t1; segundo = final.t2; }
-      else            { primeiro = final.t2; segundo = final.t1; }
+      else           { primeiro = final.t2; segundo = final.t1; }
     }
   }
 
-  // Atualiza campo campeão (sempre reflete resultado atual)
   const inputCampeao = document.getElementById('campeao-input');
   if (inputCampeao) {
     inputCampeao.value = primeiro;
     if (primeiro) Storage.setCampeao(primeiro);
   }
 
-  // ---- 3º Lugar (jogo 103 = 3lugar_0) ----
   const lugar3 = mm['3lugar_0'] || {};
   const g1t = lugar3.g1 != null && lugar3.g1 !== '' ? parseInt(lugar3.g1) : null;
   const g2t = lugar3.g2 != null && lugar3.g2 !== '' ? parseInt(lugar3.g2) : null;
@@ -911,14 +823,13 @@ function atualizarCampeaoEPodio() {
 
   let terceiro = '';
   if (lugar3.t1 && lugar3.t2 && g1t !== null && g2t !== null) {
-    if (g1t > g2t) terceiro = lugar3.t1;
+    if (g1t > g2t)      terceiro = lugar3.t1;
     else if (g2t > g1t) terceiro = lugar3.t2;
     else if (p1t !== null && p2t !== null && p1t !== p2t) {
       terceiro = p1t > p2t ? lugar3.t1 : lugar3.t2;
     }
   }
 
-  // ---- Atualiza pódio ----
   const p1El = document.getElementById('podio-1');
   const p2El = document.getElementById('podio-2');
   const p3El = document.getElementById('podio-3');
@@ -928,8 +839,7 @@ function atualizarCampeaoEPodio() {
 
   const podioBlock = document.getElementById('podio-block');
   if (podioBlock) {
-    podioBlock.style.display =
-      (primeiro || segundo || terceiro) ? 'block' : 'none';
+    podioBlock.style.display = (primeiro || segundo || terceiro) ? 'block' : 'none';
   }
 }
 
@@ -939,8 +849,6 @@ function atualizarCampeaoEPodio() {
 function initCampeao() {
   const input = document.getElementById('campeao-input');
   if (!input) return;
-  // Campo é readonly, só exibe o valor salvo
-  // Será atualizado automaticamente por atualizarCampeaoEPodio()
   input.value = Storage.getCampeao();
 }
 
@@ -951,6 +859,7 @@ function abrirModalPerfil() {
   renderListaPerfis();
   document.getElementById('modal-perfil')?.classList.remove('hidden');
 }
+
 function renderListaPerfis() {
   const lista = document.getElementById('perfil-lista');
   if (!lista) return;
@@ -964,14 +873,14 @@ function renderListaPerfis() {
     .map(p => `
       <div class="perfil-item">
         <span class="perfil-nome" id="perfil-label-${p.nome}">${p.nome}</span>
-        <input class="perfil-edit-input hidden" id="perfil-edit-${p.nome}" 
+        <input class="perfil-edit-input hidden" id="perfil-edit-${p.nome}"
           type="text" value="${p.nome}"
           onkeydown="if(event.key==='Enter')confirmarRenomear('${p.nome}');if(event.key==='Escape')cancelarEditar('${p.nome}')">
         <div class="perfil-acoes">
-          <button class="btn-perfil-acao carregar"   onclick="carregarPerfil('${p.nome}')"     title="Carregar">📂</button>
-          <button class="btn-perfil-acao salvar-cima" onclick="salvarPorCima('${p.nome}')"     title="Salvar por cima">💾</button>
-          <button class="btn-perfil-acao editar"     onclick="ativarEditar('${p.nome}')"       title="Renomear">✏️</button>
-          <button class="btn-perfil-acao deletar"    onclick="confirmarDeletarPerfil('${p.nome}')" title="Excluir">🗑️</button>
+          <button class="btn-perfil-acao carregar"    onclick="carregarPerfil('${p.nome}')"          title="Carregar">📂</button>
+          <button class="btn-perfil-acao salvar-cima" onclick="salvarPorCima('${p.nome}')"           title="Salvar por cima">💾</button>
+          <button class="btn-perfil-acao editar"      onclick="ativarEditar('${p.nome}')"            title="Renomear">✏️</button>
+          <button class="btn-perfil-acao deletar"     onclick="confirmarDeletarPerfil('${p.nome}')"  title="Excluir">🗑️</button>
         </div>
       </div>`).join('');
 }
@@ -994,10 +903,7 @@ function confirmarRenomear(nomeAntigo) {
   const novoNome = input?.value?.trim();
   if (!novoNome || novoNome === nomeAntigo) { cancelarEditar(nomeAntigo); return; }
   const perfis = Storage.listarPerfis();
-  if (perfis.find(p => p.nome === novoNome)) {
-    toast('Já existe um save com esse nome!', true); return;
-  }
-  // Carrega dados do antigo, salva com novo nome, deleta antigo
+  if (perfis.find(p => p.nome === novoNome)) { toast('Já existe um save com esse nome!', true); return; }
   const ok = Storage.carregarPerfil(nomeAntigo);
   if (ok) {
     Storage.salvarPerfil(novoNome);
@@ -1008,14 +914,10 @@ function confirmarRenomear(nomeAntigo) {
 }
 
 function confirmarDeletarPerfil(nome) {
-  // Reutiliza o modal de reset com texto customizado
   const modal = document.getElementById('modal-deletar-save');
   const txt = document.getElementById('deletar-save-nome');
   if (txt) txt.textContent = nome;
-  if (modal) {
-    modal.classList.remove('hidden');
-    modal.dataset.nome = nome;
-  }
+  if (modal) { modal.classList.remove('hidden'); modal.dataset.nome = nome; }
 }
 
 function executarDeletarPerfil() {
@@ -1039,7 +941,7 @@ function salvarPerfil() {
 }
 
 function salvarPorCima(nome) {
-  Storage.salvarPerfil(nome); // sobrescreve por ter mesmo nome
+  Storage.salvarPerfil(nome);
   renderListaPerfis();
   toast(`💾 Perfil "${nome}" atualizado!`);
 }
@@ -1051,93 +953,14 @@ function carregarPerfil(nome) {
   renderMataMata();
   initCampeao();
   rodarChaveamentoCompleto();
-  atualizarCampeaoEPodio()
+  atualizarCampeaoEPodio();
   toast(`📂 Perfil "${nome}" carregado!`);
 }
+
 function deletarPerfil(nome) {
   Storage.deletarPerfil(nome);
   renderListaPerfis();
   toast(`🗑️ Perfil "${nome}" removido.`);
-}
-
-// ============================================================
-//  BOLÃO / PALPITE
-// ============================================================
-function renderBolao() {
-  const fases = [
-    { id: 'bolao-32avos',  dados: FASE_16_AVOS,     prefixo: 'b32'   },
-    { id: 'bolao-oitavas', dados: OITAVAS_DE_FINAL, prefixo: 'boita' },
-    { id: 'bolao-quartas', dados: QUARTAS_DE_FINAL, prefixo: 'bquar' },
-    { id: 'bolao-semis',   dados: SEMIFINAIS,        prefixo: 'bsemi' },
-    { id: 'bolao-final',   dados: FINAL,             prefixo: 'bfin'  },
-  ];
-
-  const palpite = Storage.getPalpite();
-  const timesUsados = new Set();
-
-  fases.forEach(({ id, dados, prefixo }) => {
-    const container = document.getElementById(id);
-    if (!container) return;
-    container.innerHTML = dados.map((cfg, i) => {
-      const key = `${prefixo}_${i}`;
-      const saved = palpite[key] || {};
-      return `
-        <div class="mm-jogo" id="bolao-jogo-${key}">
-          <div class="mm-jogo-header" style="background:${CORES_MM['32avos']?.[i % 16] || '#3949AB'}">
-            <span>JOGO ${cfg.jogo}</span>
-            <span class="mm-data">${cfg.data} · ${cfg.local}</span>
-          </div>
-          <div class="mm-time-row">
-            <span class="mm-flag-emoji" id="bflag1-${key}">🏳️</span>
-            <input class="mm-time-input" type="text"
-              id="bt1-${key}" placeholder="${cfg.vaga1}"
-              value="${saved.t1 || ''}"
-              oninput="onBolaoChange('${key}','${prefixo}')">
-            <input type="number" class="mm-placar"
-              id="bg1-${key}" min="0" max="99"
-              value="${saved.g1 ?? ''}" placeholder="–"
-              oninput="onBolaoChange('${key}','${prefixo}')">
-          </div>
-          <div class="mm-time-row">
-            <span class="mm-flag-emoji" id="bflag2-${key}">🏳️</span>
-            <input class="mm-time-input" type="text"
-              id="bt2-${key}" placeholder="${cfg.vaga2}"
-              value="${saved.t2 || ''}"
-              oninput="onBolaoChange('${key}','${prefixo}')">
-            <input type="number" class="mm-placar"
-              id="bg2-${key}" min="0" max="99"
-              value="${saved.g2 ?? ''}" placeholder="–"
-              oninput="onBolaoChange('${key}','${prefixo}')">
-          </div>
-        </div>`;
-    }).join('');
-
-    // Restaurar flags
-    dados.forEach((cfg, i) => {
-      const key = `${prefixo}_${i}`;
-      const saved = palpite[key] || {};
-      if (saved.t1) { const f = document.getElementById(`bflag1-${key}`); if(f) f.innerHTML = getFlagByName(saved.t1); }
-      if (saved.t2) { const f = document.getElementById(`bflag2-${key}`); if(f) f.innerHTML = getFlagByName(saved.t2); }
-    });
-  });
-}
-
-function onBolaoChange(key, prefixo) {
-  const t1 = document.getElementById(`bt1-${key}`)?.value || '';
-  const t2 = document.getElementById(`bt2-${key}`)?.value || '';
-  const g1 = document.getElementById(`bg1-${key}`)?.value;
-  const g2 = document.getElementById(`bg2-${key}`)?.value;
-  Storage.setPalpite(key, { t1, t2, g1, g2 });
-  const f1 = document.getElementById(`bflag1-${key}`);
-  const f2 = document.getElementById(`bflag2-${key}`);
-  if (f1) f1.innerHTML = getFlagByName(t1);
-  if (f2) f2.innerHTML = getFlagByName(t2);
-}
-
-function limparBolao() {
-  Storage.setPalpiteCompleto({});
-  renderBolao();
-  toast('🗑️ Bolão limpo!');
 }
 
 // ============================================================
@@ -1156,15 +979,18 @@ function compartilhar() {
     toast('Erro ao gerar link.', true);
   }
 }
+
 function mostrarModalCompartilhar(url) {
   const modal = document.getElementById('modal-share');
   const input = document.getElementById('modal-share-url');
   if (modal && input) { input.value = url; modal.classList.remove('hidden'); }
 }
+
 function copiarLinkModal() {
   const input = document.getElementById('modal-share-url');
   if (input) { input.select(); document.execCommand('copy'); toast('🔗 Link copiado!'); fecharModal('modal-share'); }
 }
+
 function carregarDaURL() {
   const params = new URLSearchParams(location.search);
   const d = params.get('d');
@@ -1179,7 +1005,7 @@ function carregarDaURL() {
 }
 
 // ============================================================
-//  IMPRESSÃO / RESET / LOCK / MODAL / TOAST
+//  IMPRESSÃO / RESET / MODAL / TOAST
 // ============================================================
 function imprimir() {
   document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'block');
@@ -1189,7 +1015,9 @@ function imprimir() {
     document.querySelector('.tab-content.active')?.style.removeProperty('display');
   }, 1000);
 }
+
 function confirmarReset() { document.getElementById('modal-reset')?.classList.remove('hidden'); }
+
 function executarReset() {
   Storage.limparTudo();
   fecharModal('modal-reset');
@@ -1199,15 +1027,9 @@ function executarReset() {
   atualizarCampeaoEPodio();
   toast('🗑️ Dados apagados com sucesso.');
 }
-let locked = false;
-function toggleLock() {
-  locked = !locked;
-  document.body.classList.toggle('locked', locked);
-  const lbl = document.querySelector('.btn-lock .lock-label');
-  if (lbl) lbl.textContent = locked ? 'EDITAR' : 'BLOQUEAR';
-  toast(locked ? '🔒 Modo visualização' : '✏️ Modo edição');
-}
+
 function fecharModal(id) { document.getElementById(id)?.classList.add('hidden'); }
+
 function toast(msg, erro = false) {
   const container = document.getElementById('toast-container');
   if (!container) return;
@@ -1245,6 +1067,196 @@ async function verificarSupabase() {
 }
 
 // ============================================================
+//  CHAVEAMENTO — BRACKET VISUAL
+// ============================================================
+
+// Lê os dados do mata-mata e retorna { t1, t2, g1, g2, p1, p2 } para um jogo
+function getDadosJogo(prefixo, idx) {
+  const mm = Storage.getMataMata();
+  const saved = mm[`${prefixo}_${idx}`] || {};
+  return {
+    t1: saved.t1 || '',
+    t2: saved.t2 || '',
+    g1: saved.g1 ?? '',
+    g2: saved.g2 ?? '',
+    p1: saved.p1 ?? '',
+    p2: saved.p2 ?? '',
+  };
+}
+
+function getVencedor(d) {
+  if (!d.t1 || !d.t2 || d.g1 === '' || d.g2 === '') return null;
+  const g1 = parseInt(d.g1), g2 = parseInt(d.g2);
+  if (g1 > g2) return d.t1;
+  if (g2 > g1) return d.t2;
+  const p1 = parseInt(d.p1), p2 = parseInt(d.p2);
+  if (!isNaN(p1) && !isNaN(p2) && p1 !== p2) return p1 > p2 ? d.t1 : d.t2;
+  return null;
+}
+
+// Cria um card de time para o bracket
+function cardTime(nome, isVencedor) {
+  const flag = nome ? getFlagByName(nome) : '';
+  const cls = nome
+    ? (isVencedor ? 'bk-time bk-vencedor' : 'bk-time bk-perdedor')
+    : 'bk-time bk-vazio';
+  return `<div class="${cls}">${flag ? `<span class="bk-flag">${flag}</span>` : ''}<span class="bk-nome">${nome || '?'}</span></div>`;
+}
+
+// Cria um card de jogo para o bracket
+function cardJogo(d, jogoNum, label) {
+  const venc = getVencedor(d);
+  const placar = (d.g1 !== '' && d.g2 !== '') ? `<span class="bk-placar">${d.g1}×${d.g2}${(d.p1 !== '' && d.p2 !== '') ? ` (${d.p1}×${d.p2}p)` : ''}</span>` : '';
+  return `
+    <div class="bk-jogo">
+      <div class="bk-jogo-label">${label || `J${jogoNum}`}${placar}</div>
+      ${cardTime(d.t1, venc === d.t1)}
+      ${cardTime(d.t2, venc === d.t2)}
+    </div>`;
+}
+
+function renderChaveamento() {
+  const root = document.getElementById('chaveamento-root');
+  if (!root) return;
+
+  // Coleta dados de todas as fases
+  const d32  = Array.from({length:16}, (_, i) => getDadosJogo('32avos',  i));
+  const dOit = Array.from({length:8},  (_, i) => getDadosJogo('oitavas', i));
+  const dQua = Array.from({length:4},  (_, i) => getDadosJogo('quartas', i));
+  const dSem = Array.from({length:2},  (_, i) => getDadosJogo('semis',   i));
+  const dFin = getDadosJogo('final',   0);
+  const d3   = getDadosJogo('3lugar',  0);
+
+  // Números dos jogos reais
+  const n32  = FASE_16_AVOS.map(j => j.jogo);
+  const nOit = OITAVAS_DE_FINAL.map(j => j.jogo);
+  const nQua = QUARTAS_DE_FINAL.map(j => j.jogo);
+  const nSem = SEMIFINAIS.map(j => j.jogo);
+
+  // Bracket: lado esquerdo = jogos 0-7 dos 32avos, lado direito = jogos 8-15
+  // Oitavas: 0-3 esq, 4-7 dir
+  // Quartas: 0-1 esq, 2-3 dir
+  // Semis: 0 esq, 1 dir
+
+  const ladoEsq32  = [0,1,2,3,4,5,6,7];
+  const ladoDir32  = [8,9,10,11,12,13,14,15];
+  const ladoEsqOit = [0,1,2,3];
+  const ladoDirOit = [4,5,6,7];
+  const ladoEsqQua = [0,1];
+  const ladoDirQua = [2,3];
+
+  const col32Esq  = ladoEsq32.map(i  => cardJogo(d32[i],  n32[i]));
+  const col32Dir  = ladoDir32.map(i  => cardJogo(d32[i],  n32[i]));
+  const colOitEsq = ladoEsqOit.map(i => cardJogo(dOit[i], nOit[i]));
+  const colOitDir = ladoDirOit.map(i => cardJogo(dOit[i], nOit[i]));
+  const colQuaEsq = ladoEsqQua.map(i => cardJogo(dQua[i], nQua[i]));
+  const colQuaDir = ladoDirQua.map(i => cardJogo(dQua[i], nQua[i]));
+  const semEsq    = cardJogo(dSem[0], nSem[0]);
+  const semDir    = cardJogo(dSem[1], nSem[1]);
+  const jogoFinal = cardJogo(dFin, FINAL[0].jogo, '🏆 FINAL');
+  const jogo3     = cardJogo(d3,   TERCEIRO_LUGAR[0].jogo, '🥉 3º LUGAR');
+
+  root.innerHTML = `
+    <div class="bk-wrapper">
+
+      <!-- BRACKET DESKTOP -->
+      <div class="bk-bracket">
+
+        <!-- COLUNA: 32avos esquerdo -->
+        <div class="bk-col bk-col-32">
+          <div class="bk-col-titulo">⚡ 16 AVOS</div>
+          ${col32Esq.join('')}
+        </div>
+
+        <!-- COLUNA: Oitavas esquerdo -->
+        <div class="bk-col bk-col-oitavas">
+          <div class="bk-col-titulo">⚡ OITAVAS</div>
+          ${colOitEsq.join('')}
+        </div>
+
+        <!-- COLUNA: Quartas esquerdo -->
+        <div class="bk-col bk-col-quartas">
+          <div class="bk-col-titulo">🔥 QUARTAS</div>
+          ${colQuaEsq.join('')}
+        </div>
+
+        <!-- COLUNA: Semi esquerdo -->
+        <div class="bk-col bk-col-semis">
+          <div class="bk-col-titulo">⭐ SEMI</div>
+          ${semEsq}
+        </div>
+
+        <!-- COLUNA: Centro (Final + 3º lugar) -->
+        <div class="bk-col bk-col-centro">
+          <div class="bk-col-titulo">🏆 FINAL</div>
+          ${jogoFinal}
+          <div class="bk-3lugar-wrap">${jogo3}</div>
+        </div>
+
+        <!-- COLUNA: Semi direito -->
+        <div class="bk-col bk-col-semis">
+          <div class="bk-col-titulo">⭐ SEMI</div>
+          ${semDir}
+        </div>
+
+        <!-- COLUNA: Quartas direito -->
+        <div class="bk-col bk-col-quartas">
+          <div class="bk-col-titulo">🔥 QUARTAS</div>
+          ${colQuaDir.join('')}
+        </div>
+
+        <!-- COLUNA: Oitavas direito -->
+        <div class="bk-col bk-col-oitavas">
+          <div class="bk-col-titulo">⚡ OITAVAS</div>
+          ${colOitDir.join('')}
+        </div>
+
+        <!-- COLUNA: 32avos direito -->
+        <div class="bk-col bk-col-32">
+          <div class="bk-col-titulo">⚡ 16 AVOS</div>
+          ${col32Dir.join('')}
+        </div>
+
+      </div>
+
+      <!-- LISTA MOBILE: sequencial por rodada -->
+      <div class="bk-mobile">
+
+        <div class="bk-mob-secao">
+          <div class="bk-mob-titulo">⚡ DÉCIMO SEXTOS DE FINAL</div>
+          <div class="bk-mob-grid">${d32.map((d,i) => cardJogo(d, n32[i])).join('')}</div>
+        </div>
+
+        <div class="bk-mob-secao">
+          <div class="bk-mob-titulo">⚡ OITAVAS DE FINAL</div>
+          <div class="bk-mob-grid">${dOit.map((d,i) => cardJogo(d, nOit[i])).join('')}</div>
+        </div>
+
+        <div class="bk-mob-secao">
+          <div class="bk-mob-titulo">🔥 QUARTAS DE FINAL</div>
+          <div class="bk-mob-grid">${dQua.map((d,i) => cardJogo(d, nQua[i])).join('')}</div>
+        </div>
+
+        <div class="bk-mob-secao">
+          <div class="bk-mob-titulo">⭐ SEMIFINAIS</div>
+          <div class="bk-mob-grid">${dSem.map((d,i) => cardJogo(d, nSem[i])).join('')}</div>
+        </div>
+
+        <div class="bk-mob-secao">
+          <div class="bk-mob-titulo">🥉 DISPUTA DO 3º LUGAR</div>
+          <div class="bk-mob-grid">${jogo3}</div>
+        </div>
+
+        <div class="bk-mob-secao">
+          <div class="bk-mob-titulo">🏆 GRANDE FINAL</div>
+          <div class="bk-mob-grid">${jogoFinal}</div>
+        </div>
+
+      </div>
+    </div>`;
+}
+
+// ============================================================
 //  INIT
 // ============================================================
 document.addEventListener('DOMContentLoaded', () => {
@@ -1252,11 +1264,9 @@ document.addEventListener('DOMContentLoaded', () => {
   carregarDaURL();
   renderGrupos();
   renderMataMata();
-  renderBolao();
   initCampeao();
   verificarSupabase();
 
-  // Restaurar aba ativa
   mostrarTab(Storage.getAbaAtiva());
 
   setTimeout(() => {
