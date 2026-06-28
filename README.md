@@ -7,8 +7,8 @@ Tabela interativa da Copa do Mundo FIFA 2026 com estilo inspirado nos cartazes d
 - **Fase de Grupos** — 12 grupos (A ao L), 48 seleções, 72 jogos
 - **Classificação automática** — atualiza em tempo real com critérios oficiais FIFA (confronto direto, saldo de gols, gols marcados)
 - **Status matemático** — indica visualmente quando um time está classificado ou eliminado matematicamente
-- **Chaveamento automático** — classificados dos grupos preenchem automaticamente os 32avos de final usando a tabela oficial de 495 combinações do Anexo C da FIFA
-- **Mata-Mata completo** — 32avos, Oitavas, Quartas, Semifinais, Disputa do 3º Lugar e Final com suporte a pênaltis
+- **Chaveamento automático** — classificados dos grupos preenchem automaticamente os 16 avos de final usando a tabela oficial de 495 combinações do Anexo C da FIFA
+- **Mata-Mata completo** — 16 avos, Oitavas, Quartas, Semifinais, Disputa do 3º Lugar e Final com suporte a pênaltis
 - **Bracket visual** — aba "Chaveamento" com bracket estilo torneio (desktop) e lista por rodada (mobile)
 - **Pódio automático** — exibe Campeão, Vice e 3º lugar ao término da competição
 - **Salvar automaticamente** — tudo é salvo no navegador (localStorage)
@@ -19,27 +19,9 @@ Tabela interativa da Copa do Mundo FIFA 2026 com estilo inspirado nos cartazes d
 
 ## 🚀 Como usar
 
-### GitHub Pages (recomendado)
+### GitHub Pages
+Acesse em `https://seu-usuario.github.io/seu-repo/`
 
-1. Crie um repositório público no GitHub
-2. Faça upload de todos os arquivos na raiz do repositório
-3. Vá em **Settings → Pages → Source: `main` / `root`**
-4. Acesse `https://seu-usuario.github.io/seu-repo/`
-
-### Localmente
-
-Basta abrir o `index.html` em qualquer navegador.
-
-> ⚠️ Para funcionar corretamente com bandeiras SVG localmente, use o **Live Server** do VS Code.
-
-## ☁️ Supabase (sincronização multi-dispositivo)
-
-Opcional — permite ver e editar os resultados em qualquer dispositivo.
-
-1. Crie conta gratuita em [supabase.com](https://supabase.com)
-2. Execute o SQL do arquivo `SETUP_SUPABASE.sql`
-3. Copie sua **Project URL** e **anon key**
-4. Cole em `js/storage.js` nas variáveis `SUPABASE_URL` e `SUPABASE_KEY`
 
 ## 📁 Estrutura
 
