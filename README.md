@@ -20,7 +20,7 @@ Tabela interativa da Copa do Mundo FIFA 2026 com estilo inspirado nos cartazes d
 ## 🚀 Como usar
 
 ### GitHub Pages
-Acesse em `https://rehffv.github.io/TabelaCopa2026`
+Acesse em `[https://rehffv.github.io/TabelaCopa2026](https://rehffv.github.io/TabelaCopa2026/)`
 
 
 ## 📁 Estrutura
