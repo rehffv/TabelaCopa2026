@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Tabela interativa da Copa do Mundo FIFA 2026">
+  <title>Copa do Mundo 2026 — Tabela Interativa</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏆</text></svg>">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="toast-container" id="toast-container"></div>
+
+<!-- MODAL: COMPARTILHAR -->
+<div class="modal-overlay hidden" id="modal-share" onclick="if(event.target===this)fecharModal('modal-share')">
+  <div class="modal-box">
+    <div class="modal-titulo">🔗 Compartilhar Tabela</div>
+    <p class="modal-texto">Este link contém todos os resultados. Qualquer pessoa que abrir verá a mesma tabela.</p>
+    <input class="modal-input" type="text" id="modal-share-url" readonly>
+    <div class="modal-actions">
+      <button class="btn-modal secondary" onclick="fecharModal('modal-share')">Fechar</button>
+      <button class="btn-modal primary" onclick="copiarLinkModal()">📋 Copiar Link</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: RESET -->
+<div class="modal-overlay hidden" id="modal-reset" onclick="if(event.target===this)fecharModal('modal-reset')">
+  <div class="modal-box">
+    <div class="modal-titulo">⚠️ Apagar Tudo?</div>
+    <p class="modal-texto">Todos os resultados serão apagados. Esta ação não pode ser desfeita.</p>
+    <div class="modal-actions">
+      <button class="btn-modal secondary" onclick="fecharModal('modal-reset')">Cancelar</button>
+      <button class="btn-modal danger" onclick="executarReset()">🗑️ Apagar Tudo</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: PERFIL DE TESTE -->
+<div class="modal-overlay hidden" id="modal-perfil" onclick="if(event.target===this)fecharModal('modal-perfil')">
+  <div class="modal-box">
+    <div class="modal-titulo">📋 Minhas Tabelas Salvas</div>
+      <p class="modal-texto">Salve e alterne entre diferentes versões da tabela.</p>
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <input class="modal-input" type="text" id="perfil-nome-input"
+        placeholder="Nome do novo perfil..." style="margin:0;flex:1">
+      <button class="btn-modal primary" onclick="salvarPerfil()">💾 Novo</button>
+    </div>    
+    <div id="perfil-lista"></div>
+    <div class="modal-actions" style="margin-top:14px">
+      <button class="btn-modal secondary" onclick="fecharModal('modal-perfil')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: CONFIRMAR DELETAR SAVE -->
+<div class="modal-overlay hidden" id="modal-deletar-save" 
+  onclick="if(event.target===this)fecharModal('modal-deletar-save')">
+  <div class="modal-box">
+    <div class="modal-titulo">🗑️ Excluir Save?</div>
+    <p class="modal-texto">
+      Tem certeza que quer excluir o save 
+      <strong id="deletar-save-nome"></strong>?
+      Esta ação não pode ser desfeita.
+    </p>
+    <div class="modal-actions">
+      <button class="btn-modal secondary" onclick="fecharModal('modal-deletar-save')">Cancelar</button>
+      <button class="btn-modal danger" onclick="executarDeletarPerfil()">🗑️ Excluir</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL: CONFIRMAR LIMPAR FASE / RODADA -->
+<div class="modal-overlay hidden" id="modal-limpar-fase"
+  onclick="if(event.target===this)fecharModal('modal-limpar-fase')">
+  <div class="modal-box">
+    <div class="modal-titulo">🗑️ Limpar?</div>
+    <p class="modal-texto" id="modal-limpar-fase-txt">
+      Tem certeza? Esta ação não pode ser desfeita.
+    </p>
+    <div class="modal-actions">
+      <button class="btn-modal secondary" onclick="fecharModal('modal-limpar-fase')">Cancelar</button>
+      <button class="btn-modal danger" id="modal-limpar-fase-btn">🗑️ Limpar</button>
+    </div>
+  </div>
+</div>
+
+
+<div class="poster">
+<div class="bandeirinhas" id="bandeirinhas-top"></div>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-top">
+      <div class="header-badge">FIFA WORLD CUP™</div>
+      <div class="header-badge">WE ARE 26</div>
+      <div class="header-badge">48 SELEÇÕES</div>
+    </div>
+    <div class="titulo-copa">COPA DO MUNDO <span class="titulo-ano">2026</span></div>
+    <div class="titulo-sub">ESTADOS UNIDOS · CANADÁ · MÉXICO</div>
+    <div class="sedes-row">
+      <div class="sede-item"><img src="assets/flags/us.svg" height="11"> Estados Unidos</div>
+      <div class="sede-item"><img src="assets/flags/ca.svg" height="11"> Canadá</div>
+      <div class="sede-item"><img src="assets/flags/mx.svg" height="11"> México</div>
+      <div class="sede-item">🗓️ 11 Jun — 19 Jul 2026</div>
+    </div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <button class="tab-btn" data-tab="grupos"   onclick="mostrarTab('grupos')">⚽ Fase de Grupos</button>
+    <button class="tab-btn" data-tab="matamata" onclick="mostrarTab('matamata')">🏆 Mata-Mata</button>
+    <!-- <button class="tab-btn" data-tab="bolao"    onclick="mostrarTab('bolao')">🎯 Meu Bolão</button> -->
+    <button class="tab-btn tab-btn-disabled" title="Em breve!" disabled>🎯 Meu Bolão 🚧</button>
+    <div class="toolbar-spacer"></div>
+    <div class="toolbar-actions">
+      <button class="btn-toolbar" onclick="abrirModalPerfil()" title="Salvar Tabela">
+        📋 TABELAS
+      </button>
+      <button class="btn-toolbar btn-lock" onclick="toggleLock()" title="Bloquear Tabela"> 
+        <span class="icon">🔒</span><span class="lock-label">BLOQUEAR</span>
+      </button>
+      <button class="btn-toolbar" onclick="compartilhar()" title="Compartilhar Tabela">🔗 COMPARTILHAR</button>
+      <button class="btn-toolbar" onclick="imprimir()" title="Imprimir Tabela">🖨️ IMPRIMIR</button>
+      <button class="btn-toolbar danger" onclick="confirmarReset()" title="Limpar Todas as Tabelas">🗑️ LIMPAR</button>
+    </div>
+  </div>
+
+  <!-- TAB: GRUPOS -->
+<div id="tab-grupos" class="tab-content">
+  <div class="secao-label">
+    <span class="dot"></span>
+    PRIMEIRA FASE — GRUPOS A AO L (11 a 27 de Junho)
+    <div class="secao-label-btns">
+      <button class="btn-secao-acao" onclick="atualizarFaseGrupos()" title="Atualizar fase de grupos">↺</button>
+      <button class="btn-secao-acao danger" onclick="confirmarLimparFase('grupos')" title="Limpar fase de grupos">🗑️</button>
+    </div>
+  </div>
+  <div class="grupos-grid" id="grupos-grid"></div>
+</div>
+
+<!-- TAB: MATA-MATA -->
+<div id="tab-matamata" class="tab-content">
+  <div class="secao-label">
+    <span class="dot"></span>
+    FASE ELIMINATÓRIA (28 de Junho — 19 de Julho)
+    <div class="secao-label-btns">
+      <button class="btn-secao-acao" onclick="atualizarFaseMataMata()" title="Atualizar Fase Eliminatória">↺</button>
+      <button class="btn-secao-acao danger" onclick="confirmarLimparFase('matamata')" title="Limpar Placar - Todas as Fases Eliminatórias">🗑️</button>
+    </div>
+  </div>
+  <div class="mm-container">
+
+    <!-- 32avos -->
+    <div class="mm-secao">
+      <div class="mm-secao-titulo">
+        <span class="rodada-icon">⚡</span>
+        DÉCIMO SEXTOS DE FINAL
+        <span style="margin-left:auto;font-size:11px;opacity:0.7">28 jun — 3 jul</span>
+        <div class="mm-rodada-btns">
+          <button class="btn-rodada-acao" onclick="atualizarRodadaMM('32avos', FASE_16_AVOS)" title="Atualizar Décimo Sextos">↺</button>
+          <button class="btn-rodada-acao danger" onclick="confirmarLimparRodada('32avos', FASE_16_AVOS)" title="Limpar Placar - Décimo Sextos">🗑️</button>
+        </div>
+      </div>
+      <div class="mm-jogos-grid cols-4" id="mm-32avos"></div>
+    </div>
+
+    <!-- Oitavas -->
+    <div class="mm-secao">
+      <div class="mm-secao-titulo">
+        <span class="rodada-icon">⚡</span>
+        OITAVAS DE FINAL
+        <span style="margin-left:auto;font-size:11px;opacity:0.7">4 — 7 jul</span>
+        <div class="mm-rodada-btns">
+          <button class="btn-rodada-acao" onclick="atualizarRodadaMM('oitavas', OITAVAS_DE_FINAL)" title="Atualizar Oitavas">↺</button>
+          <button class="btn-rodada-acao danger" onclick="confirmarLimparRodada('oitavas', OITAVAS_DE_FINAL)" title="Limpar Placar - oitavas">🗑️</button>
+        </div>
+      </div>
+      <div class="mm-jogos-grid cols-4" id="mm-oitavas"></div>
+    </div>
+
+    <!-- Quartas -->
+    <div class="mm-secao">
+      <div class="mm-secao-titulo">
+        <span class="rodada-icon">🔥</span>
+        QUARTAS DE FINAL
+        <span style="margin-left:auto;font-size:11px;opacity:0.7">9 — 12 jul</span>
+        <div class="mm-rodada-btns">
+          <button class="btn-rodada-acao" onclick="atualizarRodadaMM('quartas', QUARTAS_DE_FINAL)" title="Atualizar Quartas">↺</button>
+          <button class="btn-rodada-acao danger" onclick="confirmarLimparRodada('quartas', QUARTAS_DE_FINAL)" title="Limpar Placar - Quartas">🗑️</button>
+        </div>
+      </div>
+      <div class="mm-jogos-grid cols-4" id="mm-quartas"></div>
+    </div>
+
+    <!-- Semis -->
+    <div class="mm-secao">
+      <div class="mm-secao-titulo">
+        <span class="rodada-icon">⭐</span>
+        SEMIFINAIS
+        <span style="margin-left:auto;font-size:11px;opacity:0.7">14 — 15 jul</span>
+        <div class="mm-rodada-btns">
+          <button class="btn-rodada-acao" onclick="atualizarRodadaMM('semis', SEMIFINAIS)" title="Atualizar Semi Final">↺</button>
+          <button class="btn-rodada-acao danger" onclick="confirmarLimparRodada('semis', SEMIFINAIS)" title="Limpar Placar - Semi Final">🗑️</button>
+        </div>
+      </div>
+      <div class="mm-jogos-grid cols-2" id="mm-semis"></div>
+    </div>
+
+      <div class="mm-secao">
+        <div class="mm-secao-titulo" style="background:#C9A800;color:#1E3A20">
+          <span class="rodada-icon">🥉</span> DISPUTA DO 3º LUGAR — Miami
+          <span style="margin-left:auto;font-size:11px">18 de Julho</span>
+        </div>
+        <div class="mm-jogos-grid cols-1" id="mm-3lugar"></div>
+      </div>
+
+      <div class="mm-secao">
+        <div class="mm-secao-titulo" style="background:#C9A800;color:#1E3A20">
+          <span class="rodada-icon">🏆</span> GRANDE FINAL — MetLife Stadium — Nova York/Nova Jersey
+          <span style="margin-left:auto;font-size:11px">19 de Julho</span>
+        </div>
+        <div class="mm-jogos-grid cols-1" id="mm-final"></div>
+      </div>
+
+      <!-- CAMPEÃO -->
+      <div class="campeao-block">
+        <div class="campeao-titulo">🌟 CAMPEÃO DO MUNDO 2026 🌟</div>
+        <div class="campeao-row">
+          <span class="campeao-trofeu">🏆</span>
+            <input class="campeao-input" type="text"  id="campeao-input"  placeholder="CAMPEÃO..."  readonly>
+          <span class="campeao-trofeu">🏆</span>
+        </div>
+      </div>
+
+      <!-- PÓDIO -->
+      <div class="podio-block" id="podio-block" style="display:none">
+        <div class="podio-titulo">🏅 PÓDIO FINAL</div>
+        <div class="podio-row">
+          <div class="podio-item podio-2">
+            <div class="podio-medalha">🥈</div>
+            <div class="podio-label">2º Lugar</div>
+            <div class="podio-nome" id="podio-2">?</div>
+          </div>
+          <div class="podio-item podio-1">
+            <div class="podio-medalha">🥇</div>
+            <div class="podio-label">Campeão</div>
+            <div class="podio-nome" id="podio-1">?</div>
+          </div>
+          <div class="podio-item podio-3">
+            <div class="podio-medalha">🥉</div>
+            <div class="podio-label">3º Lugar</div>
+            <div class="podio-nome" id="podio-3">?</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TAB: BOLÃO -->
+  <div id="tab-bolao" class="tab-content">
+    <div class="secao-label"><span class="dot"></span>🎯 MEU BOLÃO — Fase Eliminatória</div>
+    <div class="mm-container">
+
+      <div class="mm-secao">
+        <div class="mm-secao-titulo">
+          <span class="rodada-icon">⚡</span> DÉCIMO-SEXTOS DE FINAL
+        </div>
+        <div class="mm-jogos-grid cols-4" id="bolao-32avos"></div>
+      </div>
+
+      <div class="mm-secao">
+        <div class="mm-secao-titulo">
+          <span class="rodada-icon">⚡</span> OITAVAS DE FINAL
+        </div>
+        <div class="mm-jogos-grid cols-4" id="bolao-oitavas"></div>
+      </div>
+
+      <div class="mm-secao">
+        <div class="mm-secao-titulo">
+          <span class="rodada-icon">🔥</span> QUARTAS DE FINAL
+        </div>
+        <div class="mm-jogos-grid cols-4" id="bolao-quartas"></div>
+      </div>
+
+      <div class="mm-secao">
+        <div class="mm-secao-titulo">
+          <span class="rodada-icon">⭐</span> SEMIFINAIS
+        </div>
+        <div class="mm-jogos-grid cols-2" id="bolao-semis"></div>
+      </div>
+
+      <div class="mm-secao">
+        <div class="mm-secao-titulo" style="background:#C9A800;color:#1E3A20">
+          <span class="rodada-icon">🏆</span> FINAL
+        </div>
+        <div class="mm-jogos-grid cols-1" id="bolao-final"></div>
+      </div>
+
+      <div class="campeao-block" style="margin-top:14px">
+        <div class="campeao-titulo">🎯 MEU PALPITE DE CAMPEÃO</div>
+        <div class="campeao-row">
+          <span class="campeao-trofeu">⭐</span>
+          <input class="campeao-input" type="text" id="campeao-palpite"
+            placeholder="MEU CAMPEÃO..."
+            value=""
+            oninput="Storage.setCampeaoPalpite(this.value)">
+          <span class="campeao-trofeu">⭐</span>
+        </div>
+        <div style="margin-top:10px;text-align:center">
+          <button class="btn-modal danger" onclick="limparBolao()">🗑️ Limpar Bolão</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="bandeirinhas bottom" id="bandeirinhas-bot"></div>
+  <div class="rodape">
+    <span class="rodape-txt">FIFA WORLD CUP™ <span>2026</span></span>
+    <div class="supabase-status">
+      <div class="status-dot" id="status-dot"></div>
+      <span id="status-txt">Verificando...</span>
+    </div>
+    <span class="rodape-txt">104 JOGOS · 48 SELEÇÕES · <span>3 PAÍSES</span></span>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/classificacao.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
