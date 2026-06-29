@@ -24,6 +24,7 @@
   --cinza-1:      #F5F5F0;
   --cinza-2:      #E8E8E0;
   --cinza-3:      #A0A898;
+  --cinza-4:      #c2c5b7;
   --texto:        #1E3A20;
   --texto-suave:  #546E7A;
 
@@ -290,6 +291,12 @@ body {
   padding: 0;
   margin-left: 2px;
   opacity: 0.5;
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 1;
+  transition: opacity 0.15s ease;
 }
 .btn-limpar-jogo-grupo:hover { background: rgba(229,57,53,0.12); color: var(--danger); opacity: 1; }
 
@@ -421,6 +428,7 @@ body {
   letter-spacing: 0.5px;
   text-align: center;
   margin-bottom: 3px;
+  
 }
 .jogo-linha {
   display: flex;
@@ -428,6 +436,8 @@ body {
   justify-content: space-between;
   gap: 6px;
   padding: 0 6px;
+  position: relative;
+  padding-right: 24px;
 }
 .jogo-time {
   font-weight: 700;
@@ -809,11 +819,11 @@ body {
 .modal-texto { font-size: 14px; color: var(--texto-suave); margin-bottom: 16px; line-height: 1.6; }
 .modal-input { width: 100%; border: 1.5px solid var(--cinza-2); border-radius: var(--radius); padding: 10px 12px; font-family: 'Nunito', sans-serif; font-size: 12px; outline: none; margin-bottom: 14px; background: var(--cinza-f); word-break: break-all; }
 .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
-.btn-modal { padding: 10px 20px; border: none; border-radius: var(--radius); font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 800; cursor: pointer; transition: all 0.15s; }
+.btn-modal { min-width: 136px; padding: 10px 20px; border: none; border-radius: var(--radius); font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 800; cursor: pointer; transition: all 0.15s; }
 .btn-modal.primary   { background: var(--verde); color: #fff; }
 .btn-modal.primary:hover { background: var(--verde-esc); }
-.btn-modal.secondary { background: var(--cinza-1); color: var(--texto-suave); }
-.btn-modal.secondary:hover { background: var(--cinza-2); }
+.btn-modal.secondary { background: var(--cinza-2); color: var(--texto-suave); }
+.btn-modal.secondary:hover { background: var(--cinza-4); }
 .btn-modal.danger    { background: var(--danger); color: #fff; }
 .btn-modal.danger:hover { background: #b01e24; }
 
@@ -860,58 +870,116 @@ body {
 /* ============================================================
    CHAVEAMENTO — BRACKET
 ============================================================ */
-.bk-wrapper { background: var(--cinza-1); padding: 14px; }
+.bk-wrapper {
+  background: var(--cinza-1);
+  padding: 14px;
+  overflow-x: auto;
+}
 
-/* ── Desktop: bracket ── */
+/* Grid de 9 colunas: jogos | linhas | jogos | linhas | centro | linhas | jogos | linhas | jogos */
 .bk-bracket {
   display: grid;
-  grid-template-columns: 1.4fr 1fr 0.8fr 0.7fr 0.9fr 0.7fr 0.8fr 1fr 1.4fr;
-  gap: 6px;
-  align-items: center;
-  overflow-x: auto;
+  grid-template-columns: 105px 26px 105px 26px 105px 26px 105px 26px 120px 26px 105px 26px 105px 26px 105px 26px 105px;
+  gap: 0;
+  align-items: stretch;
   min-width: 900px;
+  position: relative;  
 }
 
 .bk-col {
   display: flex;
   flex-direction: column;
-  gap: 6px;
 }
 
 .bk-col-titulo {
   font-family: 'Oswald', sans-serif;
-  font-size: 11px;
+  font-size: 10px;
   letter-spacing: 2px;
   color: var(--azul);
   font-weight: 700;
   text-align: center;
-  padding: 4px 0 8px;
+  padding: 4px 0 6px;
   border-bottom: 2px solid var(--amarelo);
-  margin-bottom: 4px;
+  margin-bottom: 0;
+  white-space: nowrap;
 }
 
+.bk-titulo-final {
+  color: var(--amarelo-esc);
+  border-bottom-color: var(--amarelo-esc);
+  font-size: 12px;
+}
+
+/* Slots: distribuição vertical uniforme */
+.bk-slots {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+/* Cada slot ocupa espaço igual na coluna */
+.bk-slot {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 4px 0;
+}
+.bk-slot > .bk-jogo { width: 100%; }
+
+/* Coluna central (final + 3º) */
 .bk-col-centro {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 10px;
+  align-items: stretch;
 }
-.bk-col-centro .bk-col-titulo {
+.bk-col-centro .bk-slots {
+  justify-content: center;
+  gap: 16px;
+}
+.bk-col-centro .bk-slot {
+  flex: none;
+}
+.bk-slot-3lugar {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+.bk-3lugar-label {
+  font-family: 'Oswald', sans-serif;
+  font-size: 10px;
+  letter-spacing: 2px;
   color: var(--amarelo-esc);
-  border-bottom-color: var(--amarelo-esc);
-  font-size: 13px;
+  text-align: center;
+  margin-bottom: 4px;
+  font-weight: 700;
 }
 
-.bk-3lugar-wrap {
-  margin-top: 8px;
+.bk-1lugar-label {
+  font-family: 'Oswald', sans-serif;
+  font-size: 12px;
+  letter-spacing: 2px;
+  color: var(--amarelo-esc);
+  text-align: center;
+  margin-bottom: 4px;
+  font-weight: 700;
+}
+
+/* Container de linhas SVG entre colunas */
+.bk-linhas {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  z-index: 1;
+}
+.bk-svg {
+  position: absolute;
+  top: 0; left: 0;
   width: 100%;
-}
-.bk-3lugar-wrap .bk-jogo-label {
-  background: var(--amarelo-esc) !important;
-  color: #fff !important;
+  height: 100%;
+  overflow: visible;
 }
 
-/* Card de jogo no bracket */
+/* Card de jogo */
 .bk-jogo {
   background: var(--branco);
   border: 1.5px solid var(--cinza-2);
@@ -919,48 +987,50 @@ body {
   overflow: hidden;
   box-shadow: var(--sombra);
   font-size: 11px;
+  width: 100%;
 }
 
-.bk-jogo-label {
-  background: var(--azul);
+/* Cabeçalho do jogo — cor por fase via variável */
+.bk-num {
   color: var(--amarelo);
   font-family: 'Oswald', sans-serif;
   font-size: 9px;
   letter-spacing: 1px;
-  padding: 2px 6px;
+  padding: 2px 5px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 4px;
+  background: var(--bk-cor, var(--azul)); /* usa variável local, fallback azul */
 }
 
 .bk-placar {
   background: rgba(255,255,255,0.15);
   border-radius: 3px;
   padding: 1px 4px;
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 800;
   color: #fff;
   white-space: nowrap;
 }
 
-/* Time dentro do bracket */
+/* Times */
 .bk-time {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 6px;
+  padding: 4px 5px;
   border-bottom: 1px solid var(--cinza-1);
-  min-height: 26px;
+  min-height: 28px;        /* altura padronizada para todas as fases */
   transition: background 0.12s;
 }
 .bk-time:last-child { border-bottom: none; }
 
-.bk-flag { font-size: 14px; flex-shrink: 0; line-height: 1; }
-.bk-flag .flag-img { width: 18px; height: 13px; }
+.bk-flag { font-size: 13px; flex-shrink: 0; line-height: 1; }
+.bk-flag .flag-img { width: 16px; height: 11px; }
 
 .bk-nome {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   color: var(--texto);
   overflow: hidden;
@@ -969,56 +1039,67 @@ body {
   flex: 1;
 }
 
-.bk-vazio   { background: var(--cinza-1); }
+/* Vazio: aguardando classificado */
+.bk-vazio { background: var(--cinza-1); }
 .bk-vazio .bk-nome { color: var(--cinza-3); font-style: italic; font-weight: 400; }
 
+/* Neutro: time definido mas jogo ainda não realizado — aparência normal */
+/* (sem classe extra — herda o padrão de .bk-time) */
+
+/* Vencedor */
 .bk-vencedor {
   background: #e8f5e9;
   border-left: 3px solid var(--verde);
 }
 .bk-vencedor .bk-nome { color: var(--verde-esc); font-weight: 800; }
 
-.bk-perdedor { opacity: 0.55; }
+/* Perdedor: cinza só depois do jogo realizado */
+.bk-perdedor {
+  background: #f0f0f0;
+  opacity: 0.55;
+}
 
-/* Final destaque */
-.bk-col-centro .bk-jogo {
-  border: 2px solid var(--amarelo-esc);
-  box-shadow: 0 4px 16px rgba(201,168,0,0.25);
-  width: 100%;
+/* Final — destaque especial dourado */
+.bk-jogo-final {
+  border: 2px solid var(--amarelo-esc) !important;
+  box-shadow: 0 4px 20px rgba(201,168,0,0.4), 0 0 0 1px rgba(201,168,0,0.2) !important;
 }
-.bk-col-centro .bk-jogo .bk-jogo-label {
-  background: var(--amarelo-esc);
-  font-size: 11px;
-  padding: 4px 8px;
+.bk-jogo-final .bk-num {
+  background: var(--amarelo-esc) !important;
+  font-size: 12px;
+  padding: 5px 8px;
+  letter-spacing: 2px;
 }
-.bk-col-centro .bk-time { min-height: 30px; padding: 5px 8px; }
-.bk-col-centro .bk-nome { font-size: 12px; }
-.bk-col-centro .bk-flag { font-size: 18px; }
-.bk-col-centro .bk-flag .flag-img { width: 22px; height: 15px; }
+.bk-jogo-final .bk-time { min-height: 32px; padding: 5px 8px; }
+.bk-jogo-final .bk-nome { font-size: 11px; font-weight: 800; }
+.bk-jogo-final .bk-flag { font-size: 18px; }
+.bk-jogo-final .bk-flag .flag-img { width: 22px; height: 15px; }
 
-/* ── Mobile: lista vertical ── */
-.bk-mobile { display: none; }
+/* 3º lugar */
+.bk-jogo-3lugar {
+  border: 1.5px solid #b07040 !important;
+}
+.bk-jogo-3lugar .bk-num {
+  background: #a06030 !important;
+  font-size: 10px;
+  padding: 3px 6px;
+}
 
-.bk-mob-secao { margin-bottom: 14px; }
-.bk-mob-titulo {
-  background: var(--azul);
-  color: #fff;
-  font-family: 'Oswald', sans-serif;
-  font-size: 13px;
-  letter-spacing: 3px;
-  padding: 7px 12px;
-  border-bottom: 2px solid var(--amarelo);
-  border-radius: var(--radius) var(--radius) 0 0;
+/* Linhas SVG com sombra para aparecer no fundo branco */
+.bk-svg line {
+  filter: drop-shadow(0px 0px 2px rgba(180, 130, 0, 0.8));
 }
-.bk-mob-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 6px;
-  padding: 8px 0 0;
+
+/* Mais espaço no wrapper */
+.bk-wrapper {
+  background: var(--cinza-1);
+  padding: 20px 14px 30px;
+  overflow-x: auto;
 }
-.bk-mob-grid .bk-jogo { font-size: 12px; }
-.bk-mob-grid .bk-nome { font-size: 11px; }
-.bk-mob-grid .bk-time { min-height: 28px; padding: 5px 7px; }
+
+/* 3º lugar */
+.bk-jogo-3lugar .bk-num { background: #a06030; }
+
 
 /* ============================================================
    IMPRESSÃO
@@ -1043,12 +1124,6 @@ body {
   .mm-jogos-grid.cols-4 { grid-template-columns: repeat(2, 1fr); }
 }
 
-@media (max-width: 700px) {
-  /* Chaveamento: esconde bracket, mostra lista */
-  .bk-bracket { display: none; }
-  .bk-mobile  { display: block; }
-  .bk-mob-grid { grid-template-columns: 1fr; }
-}
 
 @media (max-width: 600px) {
   body { padding: 8px; font-size: 16px; }

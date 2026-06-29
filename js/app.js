@@ -1119,142 +1119,354 @@ function renderChaveamento() {
   const root = document.getElementById('chaveamento-root');
   if (!root) return;
 
-  // Coleta dados de todas as fases
-  const d32  = Array.from({length:16}, (_, i) => getDadosJogo('32avos',  i));
-  const dOit = Array.from({length:8},  (_, i) => getDadosJogo('oitavas', i));
-  const dQua = Array.from({length:4},  (_, i) => getDadosJogo('quartas', i));
-  const dSem = Array.from({length:2},  (_, i) => getDadosJogo('semis',   i));
-  const dFin = getDadosJogo('final',   0);
-  const d3   = getDadosJogo('3lugar',  0);
+  const d = {
+    // 16avos
+    j73: getDadosJogo('32avos', 0),   // jogo 73
+    j74: getDadosJogo('32avos', 1),   // jogo 74  ← índice correto
+    j75: getDadosJogo('32avos', 2),
+    j76: getDadosJogo('32avos', 3),
+    j77: getDadosJogo('32avos', 4),
+    j78: getDadosJogo('32avos', 5),
+    j79: getDadosJogo('32avos', 6),
+    j80: getDadosJogo('32avos', 7),
+    j81: getDadosJogo('32avos', 8),
+    j82: getDadosJogo('32avos', 9),
+    j83: getDadosJogo('32avos', 10),
+    j84: getDadosJogo('32avos', 11),
+    j85: getDadosJogo('32avos', 12),
+    j86: getDadosJogo('32avos', 13),
+    j87: getDadosJogo('32avos', 14),
+    j88: getDadosJogo('32avos', 15),
+    // oitavas
+    j89: getDadosJogo('oitavas', 0),
+    j90: getDadosJogo('oitavas', 1),
+    j91: getDadosJogo('oitavas', 2),
+    j92: getDadosJogo('oitavas', 3),
+    j93: getDadosJogo('oitavas', 4),
+    j94: getDadosJogo('oitavas', 5),
+    j95: getDadosJogo('oitavas', 6),
+    j96: getDadosJogo('oitavas', 7),
+    // quartas
+    j97: getDadosJogo('quartas', 0),
+    j98: getDadosJogo('quartas', 1),
+    j99: getDadosJogo('quartas', 2),
+    j100: getDadosJogo('quartas', 3),
+    // semis
+    j101: getDadosJogo('semis', 0),
+    j102: getDadosJogo('semis', 1),
+    // final e 3º
+    j103: getDadosJogo('3lugar', 0),
+    j104: getDadosJogo('final', 0),
+  };
 
-  // Números dos jogos reais
-  const n32  = FASE_16_AVOS.map(j => j.jogo);
-  const nOit = OITAVAS_DE_FINAL.map(j => j.jogo);
-  const nQua = QUARTAS_DE_FINAL.map(j => j.jogo);
-  const nSem = SEMIFINAIS.map(j => j.jogo);
+  // Helper: card de time
+  function bkTime(nome, isVenc, jogoRealizado, vagaLabel) {
+  const flag = nome ? getFlagByName(nome) : '';
+  let cls = 'bk-time';
+  if (!nome) {
+    cls += ' bk-vazio';
+  } else if (jogoRealizado && isVenc) {
+    cls += ' bk-vencedor';
+  } else if (jogoRealizado && !isVenc) {
+    cls += ' bk-perdedor';
+  }
+  const exibir = nome || vagaLabel || '?';
+  return `<div class="${cls}">
+    ${flag ? `<span class="bk-flag">${flag}</span>` : ''}
+    <span class="bk-nome">${exibir}</span>
+  </div>`;
+}
 
-  // Bracket: lado esquerdo = jogos 0-7 dos 32avos, lado direito = jogos 8-15
-  // Oitavas: 0-3 esq, 4-7 dir
-  // Quartas: 0-1 esq, 2-3 dir
-  // Semis: 0 esq, 1 dir
+// Helper: card de jogo com número
+function bkJogo(dados, num, extra = '') {
+  const v = getVencedor(dados);
+  const jogoRealizado = dados.g1 !== '' && dados.g2 !== '';
+  const placar = jogoRealizado
+    ? ` <span class="bk-placar">${dados.g1}×${dados.g2}${dados.p1 !== '' && dados.p2 !== '' ? ` (${dados.p1}×${dados.p2}p)` : ''}</span>`
+    : '';
 
-  const ladoEsq32  = [0,1,2,3,4,5,6,7];
-  const ladoDir32  = [8,9,10,11,12,13,14,15];
-  const ladoEsqOit = [0,1,2,3];
-  const ladoDirOit = [4,5,6,7];
-  const ladoEsqQua = [0,1];
-  const ladoDirQua = [2,3];
+  const todasFases = [...FASE_16_AVOS, ...OITAVAS_DE_FINAL, ...QUARTAS_DE_FINAL,
+                      ...SEMIFINAIS, ...TERCEIRO_LUGAR, ...FINAL];
+  const cfg = todasFases.find(j => j.jogo === num);
+  const vaga1 = cfg?.vaga1 || '?';
+  const vaga2 = cfg?.vaga2 || '?';
 
-  const col32Esq  = ladoEsq32.map(i  => cardJogo(d32[i],  n32[i]));
-  const col32Dir  = ladoDir32.map(i  => cardJogo(d32[i],  n32[i]));
-  const colOitEsq = ladoEsqOit.map(i => cardJogo(dOit[i], nOit[i]));
-  const colOitDir = ladoDirOit.map(i => cardJogo(dOit[i], nOit[i]));
-  const colQuaEsq = ladoEsqQua.map(i => cardJogo(dQua[i], nQua[i]));
-  const colQuaDir = ladoDirQua.map(i => cardJogo(dQua[i], nQua[i]));
-  const semEsq    = cardJogo(dSem[0], nSem[0]);
-  const semDir    = cardJogo(dSem[1], nSem[1]);
-  const jogoFinal = cardJogo(dFin, FINAL[0].jogo, '🏆 FINAL');
-  const jogo3     = cardJogo(d3,   TERCEIRO_LUGAR[0].jogo, '🥉 3º LUGAR');
+// Cores alternadas por fase (igual ao mata-mata)
+const coresPorFase = {
+  32:      ['#3F51B5','#3F51B5','#66BB6A','#3F51B5','#66BB6A','#66BB6A','#3F51B5','#66BB6A','#3F51B5',
+             '#66BB6A','#3F51B5','#66BB6A','#3F51B5','#3F51B5','#66BB6A','#66BB6A'],
+  oitavas: ['#66BB6A','#3F51B5','#66BB6A','#3F51B5','#66BB6A','#3F51B5','#66BB6A','#3F51B5'],
+  quartas: ['#3F51B5','#66BB6A','#3F51B5','#66BB6A'],
+  semis:   ['#66BB6A','#3F51B5'],
+};
+
+let corCabecalho = '';
+if (num >= 73 && num <= 88)          corCabecalho = coresPorFase[32][num - 73];
+else if (num >= 89 && num <= 96)     corCabecalho = coresPorFase.oitavas[num - 89];
+else if (num >= 97 && num <= 100)    corCabecalho = coresPorFase.quartas[num - 97];
+else if (num === 101 || num === 102) corCabecalho = coresPorFase.semis[num - 101];
+
+return `<div class="bk-jogo${extra ? ' ' + extra : ''}" data-jogo="${num}">
+  <div class="bk-num" style="background:${corCabecalho || 'var(--azul)'}">J${num}${placar}</div>
+  ${bkTime(dados.t1, v === dados.t1 && !!v, jogoRealizado, vaga1)}
+  ${bkTime(dados.t2, v === dados.t2 && !!v, jogoRealizado, vaga2)}
+</div>`;
+
+}
+
+  // Ordem dos jogos: lado esq de cima pra baixo
+  const esq32  = [d.j74, d.j77, d.j73, d.j75, d.j83, d.j84, d.j81, d.j82];
+  const esqNum = [74, 77, 73, 75, 83, 84, 81, 82];
+  const dir32  = [d.j76, d.j78, d.j79, d.j80, d.j86, d.j88, d.j85, d.j87];
+  const dirNum = [76, 78, 79, 80, 86, 88, 85, 87];
+
+  const esqOit  = [d.j89, d.j90, d.j93, d.j94];
+  const esqONum = [89, 90, 93, 94];
+  const dirOit  = [d.j91, d.j92, d.j95, d.j96];
+  const dirONum = [91, 92, 95, 96];
 
   root.innerHTML = `
     <div class="bk-wrapper">
 
-      <!-- BRACKET DESKTOP -->
+      <!-- ══ BRACKET DESKTOP ══ -->
       <div class="bk-bracket">
 
-        <!-- COLUNA: 32avos esquerdo -->
-        <div class="bk-col bk-col-32">
+        <!-- Coluna 1: 32avos esquerdo -->
+        <div class="bk-col" id="bk-c-esq32">
           <div class="bk-col-titulo">⚡ 16 AVOS</div>
-          ${col32Esq.join('')}
+          <div class="bk-slots">
+            ${esq32.map((d,i) => `<div class="bk-slot">${bkJogo(d, esqNum[i])}</div>`).join('')}
+          </div>
         </div>
 
-        <!-- COLUNA: Oitavas esquerdo -->
-        <div class="bk-col bk-col-oitavas">
+        <!-- Linhas esq32 → oitavas esq -->
+        <div class="bk-linhas" id="bk-l-esqOit">
+          <svg class="bk-svg" id="bk-svg-esqOit"></svg>
+        </div>
+
+        <!-- Coluna 2: Oitavas esquerdo -->
+        <div class="bk-col" id="bk-c-esqOit">
           <div class="bk-col-titulo">⚡ OITAVAS</div>
-          ${colOitEsq.join('')}
+          <div class="bk-slots">
+            ${esqOit.map((d,i) => `<div class="bk-slot">${bkJogo(d, esqONum[i])}</div>`).join('')}
+          </div>
         </div>
 
-        <!-- COLUNA: Quartas esquerdo -->
-        <div class="bk-col bk-col-quartas">
+        <!-- Linhas oitavas esq → quartas esq -->
+        <div class="bk-linhas" id="bk-l-esqQua">
+          <svg class="bk-svg" id="bk-svg-esqQua"></svg>
+        </div>
+
+        <!-- Coluna 3: Quartas esquerdo -->
+        <div class="bk-col" id="bk-c-esqQua">
           <div class="bk-col-titulo">🔥 QUARTAS</div>
-          ${colQuaEsq.join('')}
+          <div class="bk-slots">
+            <div class="bk-slot">${bkJogo(d.j97, 97)}</div>
+            <div class="bk-slot">${bkJogo(d.j98, 98)}</div>
+          </div>
         </div>
 
-        <!-- COLUNA: Semi esquerdo -->
-        <div class="bk-col bk-col-semis">
+        <!-- Linhas quartas esq → semi esq -->
+        <div class="bk-linhas" id="bk-l-esqSemi">
+          <svg class="bk-svg" id="bk-svg-esqSemi"></svg>
+        </div>
+
+        <!-- Coluna 4: Semi esquerdo -->
+        <div class="bk-col" id="bk-c-esqSemi">
           <div class="bk-col-titulo">⭐ SEMI</div>
-          ${semEsq}
+          <div class="bk-slots">
+            <div class="bk-slot">${bkJogo(d.j101, 101)}</div>
+          </div>
         </div>
 
-        <!-- COLUNA: Centro (Final + 3º lugar) -->
-        <div class="bk-col bk-col-centro">
-          <div class="bk-col-titulo">🏆 FINAL</div>
-          ${jogoFinal}
-          <div class="bk-3lugar-wrap">${jogo3}</div>
+        <!-- Linhas semi → final -->
+        <div class="bk-linhas" id="bk-l-final">
+          <svg class="bk-svg" id="bk-svg-final"></svg>
         </div>
 
-        <!-- COLUNA: Semi direito -->
-        <div class="bk-col bk-col-semis">
+        <!-- Coluna 5: Centro (Final + 3º) -->
+        <div class="bk-col bk-col-centro" id="bk-c-centro">
+          <div class="bk-col-titulo bk-titulo-final">🏆 FINAL</div>
+          <div class="bk-slots">
+            <div class="bk-1lugar-label">🏆 GRANDE FINAL
+              <div class="bk-slot">${bkJogo(d.j104, 104, 'bk-jogo-final')}</div>
+            </div>
+            <div class="bk-slot bk-slot-3lugar">
+              <div class="bk-3lugar-label">🥉 3º LUGAR</div>
+              ${bkJogo(d.j103, 103, 'bk-jogo-3lugar')}
+            </div>
+          </div>
+        </div>
+
+        <!-- Linhas final → semi dir -->
+        <div class="bk-linhas" id="bk-l-finalDir">
+          <svg class="bk-svg" id="bk-svg-finalDir"></svg>
+        </div>
+
+        <!-- Coluna 6: Semi direito -->
+        <div class="bk-col" id="bk-c-dirSemi">
           <div class="bk-col-titulo">⭐ SEMI</div>
-          ${semDir}
+          <div class="bk-slots">
+            <div class="bk-slot">${bkJogo(d.j102, 102)}</div>
+          </div>
         </div>
 
-        <!-- COLUNA: Quartas direito -->
-        <div class="bk-col bk-col-quartas">
+        <!-- Linhas semi dir → quartas dir -->
+        <div class="bk-linhas" id="bk-l-dirQua">
+          <svg class="bk-svg" id="bk-svg-dirQua"></svg>
+        </div>
+
+        <!-- Coluna 7: Quartas direito -->
+        <div class="bk-col" id="bk-c-dirQua">
           <div class="bk-col-titulo">🔥 QUARTAS</div>
-          ${colQuaDir.join('')}
+          <div class="bk-slots">
+            <div class="bk-slot">${bkJogo(d.j99, 99)}</div>
+            <div class="bk-slot">${bkJogo(d.j100, 100)}</div>
+          </div>
         </div>
 
-        <!-- COLUNA: Oitavas direito -->
-        <div class="bk-col bk-col-oitavas">
+        <!-- Linhas quartas dir → oitavas dir -->
+        <div class="bk-linhas" id="bk-l-dirOit">
+          <svg class="bk-svg" id="bk-svg-dirOit"></svg>
+        </div>
+
+        <!-- Coluna 8: Oitavas direito -->
+        <div class="bk-col" id="bk-c-dirOit">
           <div class="bk-col-titulo">⚡ OITAVAS</div>
-          ${colOitDir.join('')}
+          <div class="bk-slots">
+            ${dirOit.map((d,i) => `<div class="bk-slot">${bkJogo(d, dirONum[i])}</div>`).join('')}
+          </div>
         </div>
 
-        <!-- COLUNA: 32avos direito -->
-        <div class="bk-col bk-col-32">
+        <!-- Linhas oitavas dir → 32avos dir -->
+        <div class="bk-linhas" id="bk-l-dir32">
+          <svg class="bk-svg" id="bk-svg-dir32"></svg>
+        </div>
+
+        <!-- Coluna 9: 32avos direito -->
+        <div class="bk-col" id="bk-c-dir32">
           <div class="bk-col-titulo">⚡ 16 AVOS</div>
-          ${col32Dir.join('')}
+          <div class="bk-slots">
+            ${dir32.map((d,i) => `<div class="bk-slot">${bkJogo(d, dirNum[i])}</div>`).join('')}
+          </div>
         </div>
 
       </div>
+      <!-- fim bracket desktop -->
 
-      <!-- LISTA MOBILE: sequencial por rodada -->
-      <div class="bk-mobile">
-
-        <div class="bk-mob-secao">
-          <div class="bk-mob-titulo">⚡ DÉCIMO SEXTOS DE FINAL</div>
-          <div class="bk-mob-grid">${d32.map((d,i) => cardJogo(d, n32[i])).join('')}</div>
-        </div>
-
-        <div class="bk-mob-secao">
-          <div class="bk-mob-titulo">⚡ OITAVAS DE FINAL</div>
-          <div class="bk-mob-grid">${dOit.map((d,i) => cardJogo(d, nOit[i])).join('')}</div>
-        </div>
-
-        <div class="bk-mob-secao">
-          <div class="bk-mob-titulo">🔥 QUARTAS DE FINAL</div>
-          <div class="bk-mob-grid">${dQua.map((d,i) => cardJogo(d, nQua[i])).join('')}</div>
-        </div>
-
-        <div class="bk-mob-secao">
-          <div class="bk-mob-titulo">⭐ SEMIFINAIS</div>
-          <div class="bk-mob-grid">${dSem.map((d,i) => cardJogo(d, nSem[i])).join('')}</div>
-        </div>
-
-        <div class="bk-mob-secao">
-          <div class="bk-mob-titulo">🥉 DISPUTA DO 3º LUGAR</div>
-          <div class="bk-mob-grid">${jogo3}</div>
-        </div>
-
-        <div class="bk-mob-secao">
-          <div class="bk-mob-titulo">🏆 GRANDE FINAL</div>
-          <div class="bk-mob-grid">${jogoFinal}</div>
-        </div>
-
-      </div>
     </div>`;
+
+  // Desenha as linhas conectoras após o DOM renderizar
+  requestAnimationFrame(() => desenharLinhas());
 }
+
+// ============================================================
+//  DESENHAR LINHAS CONECTORAS DO BRACKET
+// ============================================================
+function desenharLinhas() {
+  // Conecta pares de slots de uma coluna fonte para slots de coluna destino
+  // via SVG dentro do container de linhas entre elas
+  function conectar(svgId, containerId, fontSlots, destSlots) {
+    const svg = document.getElementById(svgId);
+    const container = document.getElementById(containerId);
+    if (!svg || !container) return;
+
+    const cRect = container.getBoundingClientRect();
+    svg.setAttribute('width', cRect.width);
+    svg.setAttribute('height', cRect.height);
+    svg.innerHTML = '';
+
+    const cor = '#FFE866'; // amarelo
+
+    for (let i = 0; i < destSlots.length; i++) {
+      const a = fontSlots[i * 2];
+      const b = fontSlots[i * 2 + 1];
+      const dest = destSlots[i];
+      if (!a || !b || !dest) continue;
+
+      const aRect = a.getBoundingClientRect();
+      const bRect = b.getBoundingClientRect();
+      const dRect = dest.getBoundingClientRect();
+
+      // Pontos de saída (meio vertical de cada jogo fonte)
+      const y1 = aRect.top + aRect.height / 2 - cRect.top;
+      const y2 = bRect.top + bRect.height / 2 - cRect.top;
+      // Ponto de entrada (meio vertical do jogo destino)
+      const yd = dRect.top + dRect.height / 2 - cRect.top;
+
+      // X: saída do lado direito da coluna fonte, entrada pelo lado esquerdo da destino
+      // Container de linhas fica entre as colunas: x esq = 0, x dir = largura total
+      const xSaida = svgId.includes('Dir') || svgId.includes('dir') ? cRect.width : 0;
+      const xEntrada = svgId.includes('Dir') || svgId.includes('dir') ? 0 : cRect.width;
+      const xMeio = cRect.width / 2;
+
+      // Linha vertical entre os dois jogos fonte
+      const yTop = Math.min(y1, y2);
+      const yBot = Math.max(y1, y2);
+
+      // Saída horizontal de cada fonte até o meio
+      svg.innerHTML += `<line x1="${xSaida}" y1="${y1}" x2="${xMeio}" y2="${y1}" stroke="${cor}" stroke-width="2"/>`;
+      svg.innerHTML += `<line x1="${xSaida}" y1="${y2}" x2="${xMeio}" y2="${y2}" stroke="${cor}" stroke-width="2"/>`;
+      // Linha vertical unindo os dois
+      svg.innerHTML += `<line x1="${xMeio}" y1="${yTop}" x2="${xMeio}" y2="${yBot}" stroke="${cor}" stroke-width="2"/>`;
+      // Linha horizontal do meio até a entrada do destino
+      svg.innerHTML += `<line x1="${xMeio}" y1="${yd}" x2="${xEntrada}" y2="${yd}" stroke="${cor}" stroke-width="2"/>`;
+    }
+  }
+
+  // Pega todos os .bk-jogo dentro de um container de coluna
+  function jogosEm(colId) {
+    return Array.from(document.querySelectorAll(`#${colId} .bk-jogo`));
+  }
+
+  // Esq: 32avos → oitavas
+  conectar('bk-svg-esqOit', 'bk-l-esqOit',
+    jogosEm('bk-c-esq32'),
+    jogosEm('bk-c-esqOit')
+  );
+  // Esq: oitavas → quartas
+  conectar('bk-svg-esqQua', 'bk-l-esqQua',
+    jogosEm('bk-c-esqOit'),
+    jogosEm('bk-c-esqQua')
+  );
+  // Esq: quartas → semi
+  conectar('bk-svg-esqSemi', 'bk-l-esqSemi',
+    jogosEm('bk-c-esqQua'),
+    jogosEm('bk-c-esqSemi')
+  );
+  // Esq: semi → final
+  conectar('bk-svg-final', 'bk-l-final',
+    jogosEm('bk-c-esqSemi'),
+    jogosEm('bk-c-centro').filter(j => j.dataset.jogo === '104')
+  );
+
+  // Dir: semi → final (lado direito, linhas espelhadas)
+  conectar('bk-svg-finalDir', 'bk-l-finalDir',
+    jogosEm('bk-c-dirSemi'),
+    jogosEm('bk-c-centro').filter(j => j.dataset.jogo === '104')
+  );
+  // Dir: quartas → semi
+  conectar('bk-svg-dirQua', 'bk-l-dirQua',
+    jogosEm('bk-c-dirQua'),
+    jogosEm('bk-c-dirSemi')
+  );
+  // Dir: oitavas → quartas
+  conectar('bk-svg-dirOit', 'bk-l-dirOit',
+    jogosEm('bk-c-dirOit'),
+    jogosEm('bk-c-dirQua')
+  );
+  // Dir: 32avos → oitavas
+  conectar('bk-svg-dir32', 'bk-l-dir32',
+    jogosEm('bk-c-dir32'),
+    jogosEm('bk-c-dirOit')
+  );
+}
+
+window.addEventListener('resize', () => {
+  if (document.getElementById('tab-chaveamento')?.classList.contains('active')) {
+    desenharLinhas();
+  }
+});
 
 // ============================================================
 //  INIT
