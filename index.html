@@ -7,16 +7,51 @@
   <title>Copa do Mundo 2026 — Tabela Interativa</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏆</text></svg>">
   <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/status-bar-addon.css">
 </head>
-<body>
+<body class="modo-visitante">
 
 <div class="toast-container" id="toast-container"></div>
+
+<!-- MODAL: LOGIN ADMIN -->
+<div class="modal-overlay hidden" id="modal-admin"
+  onclick="if(event.target===this)fecharModal('modal-admin')">
+  <div class="modal-box">
+    <div class="modal-titulo">🔐 Modo Administrador</div>
+    <p class="modal-texto">Digite a senha de administrador para editar a tabela oficial.</p>
+    <input class="modal-input" type="password" id="admin-senha-input"
+      placeholder="Senha..."
+      onkeydown="if(event.key==='Enter')tentarLoginAdmin()">
+    <div id="admin-erro" style="color:#E53935;font-size:13px;margin-top:6px;display:none">
+      ❌ Senha incorreta.
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal secondary" onclick="fecharModal('modal-admin')">Cancelar</button>
+      <button class="btn-modal primary" onclick="tentarLoginAdmin()">🔓 Entrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: SALVAR OFICIAL -->
+<div class="modal-overlay hidden" id="modal-salvar-oficial"
+  onclick="if(event.target===this)fecharModal('modal-salvar-oficial')">
+  <div class="modal-box">
+    <div class="modal-titulo">☁️ Publicar Tabela Oficial</div>
+    <p class="modal-texto">
+      Isso vai publicar os resultados atuais como a <strong>Tabela Oficial</strong>, visível para todos os visitantes em qualquer dispositivo.
+    </p>
+    <div class="modal-actions">
+      <button class="btn-modal secondary" onclick="fecharModal('modal-salvar-oficial')">Cancelar</button>
+      <button class="btn-modal primary" onclick="executarSalvarOficial()">☁️ Publicar</button>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL: COMPARTILHAR -->
 <div class="modal-overlay hidden" id="modal-share" onclick="if(event.target===this)fecharModal('modal-share')">
   <div class="modal-box">
     <div class="modal-titulo">🔗 Compartilhar Tabela</div>
-    <p class="modal-texto">Este link contém todos os resultados. Qualquer pessoa que abrir verá a mesma tabela.</p>
+    <p class="modal-texto">Este é o link do site. Quem abrir verá a Tabela Oficial sempre atualizada automaticamente.</p>
     <input class="modal-input" type="text" id="modal-share-url" readonly>
     <div class="modal-actions">
       <button class="btn-modal secondary" onclick="fecharModal('modal-share')">Fechar</button>
@@ -37,14 +72,14 @@
   </div>
 </div>
 
-<!-- MODAL: PERFIL DE TESTE -->
+<!-- MODAL: TABELAS SALVAS (só visível no modo admin) -->
 <div class="modal-overlay hidden" id="modal-perfil" onclick="if(event.target===this)fecharModal('modal-perfil')">
   <div class="modal-box">
     <div class="modal-titulo">📋 Minhas Tabelas Salvas</div>
     <p class="modal-texto">Salve e alterne entre diferentes versões da tabela.</p>
     <div style="display:flex;gap:8px;margin-bottom:14px">
       <input class="modal-input" type="text" id="perfil-nome-input"
-        placeholder="Nome do novo perfil..." style="margin:0;flex:1">
+        placeholder="Nome do novo save..." style="margin:0;flex:1">
       <button class="btn-modal primary" onclick="salvarPerfil()">💾 Novo</button>
     </div>
     <div id="perfil-lista"></div>
@@ -89,6 +124,31 @@
 <div class="poster">
   <div class="bandeirinhas" id="bandeirinhas-top"></div>
 
+  <!-- BARRA DE STATUS -->
+  <div class="status-bar" id="status-bar">
+    <div class="status-bar-esq">
+      <div class="status-modo">
+        <span class="status-dot-bar" id="status-dot-bar"></span>
+        <span id="status-modo-txt">Carregando...</span>
+      </div>
+      <div class="status-tabela" id="status-tabela-wrap">
+        📋 <span id="status-tabela-nome">Carregando...</span>
+        <span class="status-aviso-leitura" id="status-aviso-leitura"></span>
+      </div>
+    </div>
+    <div class="status-bar-dir" style="display:flex;gap:8px;align-items:center">
+      <button class="btn-salvar-oficial" onclick="confirmarSalvarOficial()" title="Publicar tabela oficial">
+        ☁️ Publicar Oficial
+      </button>
+      <button class="btn-atualizar-oficial" id="btn-atualizar-oficial" onclick="atualizarTabelaOficialNaTela()" title="Buscar últimas atualizações da Tabela Oficial">
+        ↺ Atualizar
+      </button>
+      <button class="btn-admin-login" id="btn-admin-toggle" onclick="toggleAdmin()">
+        🔐 Entrar como Admin
+      </button>
+    </div>
+  </div>
+
   <!-- HEADER -->
   <div class="header">
     <div class="header-top">
@@ -113,7 +173,7 @@
     <button class="tab-btn" data-tab="chaveamento" onclick="mostrarTab('chaveamento')">📊 Chaveamento</button>
     <div class="toolbar-spacer"></div>
     <div class="toolbar-actions">
-      <button class="btn-toolbar" onclick="abrirModalPerfil()" title="Salvar Tabela">📋 TABELAS</button>
+      <button class="btn-toolbar" onclick="abrirModalPerfil()" title="Tabelas salvas">📋 TABELAS</button>
       <button class="btn-toolbar" onclick="compartilhar()" title="Compartilhar Tabela">🔗 COMPARTILHAR</button>
       <button class="btn-toolbar" onclick="imprimir()" title="Imprimir Tabela">🖨️ IMPRIMIR</button>
       <button class="btn-toolbar danger" onclick="confirmarReset()" title="Limpar Todas as Tabelas">🗑️ LIMPAR</button>
@@ -145,7 +205,7 @@
     </div>
     <div class="mm-container">
 
-      <!-- 32avos -->
+      <!-- 16 avos -->
       <div class="mm-secao">
         <div class="mm-secao-titulo">
           <span class="rodada-icon">⚡</span>

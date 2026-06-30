@@ -164,6 +164,11 @@ function onPlacarChange(gi, ji) {
     Storage.setResultado(key, v1 === '' ? null : v1, v2 === '' ? null : v2);
     atualizarClassif(gi);
   }
+
+  // Auto-sync no Supabase se for admin
+  if (AdminMode.isAdmin()) {
+    SupabaseSync.salvar('resultados', Storage.getResultados()).catch(() => {});
+  }
 }
 
 // ============================================================
@@ -524,6 +529,11 @@ function onMMChange(key) {
 
   propagarVencedoresMM();
   atualizarCampeaoEPodio();
+
+  // Auto-sync no Supabase se for admin
+  if (AdminMode.isAdmin()) {
+    SupabaseSync.salvar('matamata', Storage.getMataMata()).catch(() => {});
+  }
 }
 
 // ============================================================
@@ -853,7 +863,7 @@ function initCampeao() {
 }
 
 // ============================================================
-//  PERFIL DE TESTE
+//  PERFIS — Oficial (Supabase, todos veem, só admin edita) + locais
 // ============================================================
 function abrirModalPerfil() {
   renderListaPerfis();
@@ -863,26 +873,47 @@ function abrirModalPerfil() {
 function renderListaPerfis() {
   const lista = document.getElementById('perfil-lista');
   if (!lista) return;
+  const isAdmin = AdminMode.isAdmin();
+  const tabelaAtiva = Storage.getTabelaAtiva();
+
   const saves = Storage.listarPerfis();
+
+  // Item especial: Tabela Oficial — sempre aparece primeiro
+  const oficialAtiva = tabelaAtiva === Storage.NOME_OFICIAL;
+  let html = `
+    <div class="perfil-item perfil-oficial${oficialAtiva ? ' perfil-ativa' : ''}">
+      <span class="perfil-nome">🏆 Tabela Oficial${oficialAtiva ? ' (atual)' : ''}</span>
+      <div class="perfil-acoes">
+        <button class="btn-perfil-acao texto carregar" onclick="carregarTabelaOficial()" title="Ver Tabela Oficial">📂 Ver</button>
+        <button class="btn-perfil-acao texto copiar" onclick="abrirCopiarOficial()" title="Criar uma cópia para suas projeções">📑 Copiar</button>
+        ${isAdmin ? `<button class="btn-perfil-acao texto salvar-cima" onclick="confirmarSalvarOficial()" title="Publicar como Oficial">☁️ Publicar</button>` : ''}
+      </div>
+    </div>`;
+
   if (saves.length === 0) {
-    lista.innerHTML = '<p style="color:#888;font-size:13px;padding:8px 0">Nenhum save ainda.</p>';
-    return;
-  }
-  lista.innerHTML = saves
-    .sort((a, b) => b.ts - a.ts)
-    .map(p => `
-      <div class="perfil-item">
-        <span class="perfil-nome" id="perfil-label-${p.nome}">${p.nome}</span>
+    html += '<p style="color:#888;font-size:13px;padding:8px 0">Nenhuma tabela salva ainda. Crie uma para fazer suas projeções!</p>';
+  } else {
+    html += saves
+      .sort((a, b) => b.ts - a.ts)
+      .map(p => {
+        const ativa = tabelaAtiva === p.nome;
+        return `
+      <div class="perfil-item${ativa ? ' perfil-ativa' : ''}">
+        <span class="perfil-nome" id="perfil-label-${p.nome}">${p.nome}${ativa ? ' (atual)' : ''}</span>
         <input class="perfil-edit-input hidden" id="perfil-edit-${p.nome}"
           type="text" value="${p.nome}"
           onkeydown="if(event.key==='Enter')confirmarRenomear('${p.nome}');if(event.key==='Escape')cancelarEditar('${p.nome}')">
         <div class="perfil-acoes">
-          <button class="btn-perfil-acao carregar"    onclick="carregarPerfil('${p.nome}')"          title="Carregar">📂</button>
-          <button class="btn-perfil-acao salvar-cima" onclick="salvarPorCima('${p.nome}')"           title="Salvar por cima">💾</button>
-          <button class="btn-perfil-acao editar"      onclick="ativarEditar('${p.nome}')"            title="Renomear">✏️</button>
-          <button class="btn-perfil-acao deletar"     onclick="confirmarDeletarPerfil('${p.nome}')"  title="Excluir">🗑️</button>
+          <button class="btn-perfil-acao carregar"    onclick="carregarPerfilUI('${p.nome}')"     title="Carregar">📂</button>
+          <button class="btn-perfil-acao salvar-cima" onclick="salvarPorCima('${p.nome}')"        title="Salvar por cima">💾</button>
+          <button class="btn-perfil-acao editar"      onclick="ativarEditar('${p.nome}')"         title="Renomear">✏️</button>
+          <button class="btn-perfil-acao deletar"     onclick="confirmarDeletarPerfil('${p.nome}')" title="Excluir">🗑️</button>
         </div>
-      </div>`).join('');
+      </div>`;
+      }).join('');
+  }
+
+  lista.innerHTML = html;
 }
 
 function ativarEditar(nome) {
@@ -902,6 +933,7 @@ function confirmarRenomear(nomeAntigo) {
   const input = document.getElementById(`perfil-edit-${nomeAntigo}`);
   const novoNome = input?.value?.trim();
   if (!novoNome || novoNome === nomeAntigo) { cancelarEditar(nomeAntigo); return; }
+  if (novoNome === Storage.NOME_OFICIAL) { toast('Esse nome é reservado para a Tabela Oficial!', true); return; }
   const perfis = Storage.listarPerfis();
   if (perfis.find(p => p.nome === novoNome)) { toast('Já existe um save com esse nome!', true); return; }
   const ok = Storage.carregarPerfil(nomeAntigo);
@@ -909,6 +941,7 @@ function confirmarRenomear(nomeAntigo) {
     Storage.salvarPerfil(novoNome);
     Storage.deletarPerfil(nomeAntigo);
     renderListaPerfis();
+    atualizarStatusBar();
     toast(`✏️ Renomeado para "${novoNome}"!`);
   }
 }
@@ -927,6 +960,7 @@ function executarDeletarPerfil() {
   Storage.deletarPerfil(nome);
   fecharModal('modal-deletar-save');
   renderListaPerfis();
+  atualizarStatusBar();
   toast(`🗑️ Save "${nome}" excluído.`);
 }
 
@@ -934,19 +968,40 @@ function salvarPerfil() {
   const input = document.getElementById('perfil-nome-input');
   const nome = input?.value?.trim();
   if (!nome) { toast('Digite um nome para o novo perfil!', true); return; }
-  Storage.salvarPerfil(nome);
+  if (nome === Storage.NOME_OFICIAL) { toast('Esse nome é reservado para a Tabela Oficial!', true); return; }
+
+  const ehCopiaOficial = input?.dataset.modoCopiaOficial === 'true' && window.__copiaOficialPendente;
+
+  if (ehCopiaOficial) {
+    const ok = Storage.salvarPerfilComDados(nome, window.__copiaOficialPendente);
+    if (!ok) { toast('Não foi possível salvar com esse nome.', true); return; }
+    delete input.dataset.modoCopiaOficial;
+    window.__copiaOficialPendente = null;
+    if (input) input.value = '';
+    renderListaPerfis();
+    toast(`📑 Cópia "${nome}" criada a partir da Tabela Oficial! Carregando...`);
+    carregarPerfilUI(nome);
+    return;
+  }
+
+  const ok = Storage.salvarPerfil(nome);
+  if (!ok) { toast('Não foi possível salvar com esse nome.', true); return; }
   if (input) input.value = '';
   renderListaPerfis();
-  toast(`💾 Perfil "${nome}" criado!`);
+  atualizarStatusBar();
+  toast(`💾 Tabela "${nome}" criada!`);
 }
 
 function salvarPorCima(nome) {
   Storage.salvarPerfil(nome);
   renderListaPerfis();
-  toast(`💾 Perfil "${nome}" atualizado!`);
+  atualizarStatusBar();
+  toast(`💾 Tabela "${nome}" atualizada!`);
 }
 
-function carregarPerfil(nome) {
+// Carrega um perfil local na tela (renomeado de carregarPerfil → carregarPerfilUI
+// para não colidir com Storage.carregarPerfil)
+function carregarPerfilUI(nome) {
   Storage.carregarPerfil(nome);
   fecharModal('modal-perfil');
   renderGrupos();
@@ -954,12 +1009,95 @@ function carregarPerfil(nome) {
   initCampeao();
   rodarChaveamentoCompleto();
   atualizarCampeaoEPodio();
-  toast(`📂 Perfil "${nome}" carregado!`);
+  atualizarStatusBar();
+  toast(`📂 Tabela "${nome}" carregada!`);
+}
+
+// Cria uma cópia local da Tabela Oficial (no estado atual) para o
+// visitante usar como ponto de partida de suas próprias projeções.
+async function abrirCopiarOficial() {
+  toast('☁️ Buscando dados atuais da Tabela Oficial...');
+  try {
+    const state = await SupabaseSync.carregar() || Storage.getCacheOficial();
+    if (!state) {
+      toast('❌ Não foi possível obter a Tabela Oficial para copiar.', true);
+      return;
+    }
+    // Guarda temporariamente para a confirmação de nome usar
+    window.__copiaOficialPendente = state;
+    const input = document.getElementById('perfil-nome-input');
+    if (input) {
+      const sugestao = `Minha Projeção ${new Date().toLocaleDateString('pt-BR')}`;
+      input.value = sugestao;
+      input.dataset.modoCopiaOficial = 'true';
+      input.focus();
+      input.select();
+    }
+    toast('✏️ Dê um nome pra sua cópia e clique em "Novo"!');
+  } catch (e) {
+    toast('❌ Erro ao copiar: ' + e.message, true);
+  }
+}
+
+// Botão "↺ Atualizar" na barra de status: busca a versão mais recente
+// da Tabela Oficial sem precisar abrir o modal de tabelas salvas.
+async function atualizarTabelaOficialNaTela() {
+  const btn = document.getElementById('btn-atualizar-oficial');
+  btn?.classList.add('spinning');
+  toast('↺ Buscando atualizações...');
+  try {
+    const state = await SupabaseSync.carregar();
+    if (!state) { toast('❌ Sem conexão no momento.', true); return; }
+    Storage.carregarOficialNaTela(state);
+    renderGrupos();
+    renderMataMata();
+    initCampeao();
+    rodarChaveamentoCompleto();
+    atualizarCampeaoEPodio();
+    atualizarStatusBar();
+    toast('✅ Tabela Oficial atualizada!');
+  } catch (e) {
+    toast('❌ Erro ao atualizar: ' + e.message, true);
+  } finally {
+    setTimeout(() => btn?.classList.remove('spinning'), 600);
+  }
+}
+
+// Carrega a Tabela Oficial na tela (busca do cache local ou do Supabase)
+async function carregarTabelaOficial() {
+  toast('☁️ Carregando Tabela Oficial...');
+  try {
+    const state = await SupabaseSync.carregar();
+    if (state) {
+      Storage.carregarOficialNaTela(state);
+    } else {
+      // Sem conexão: tenta usar o cache local da última vez que carregou
+      const cache = Storage.getCacheOficial();
+      if (cache) {
+        Storage.carregarOficialNaTela(cache);
+        toast('⚠️ Usando última versão salva localmente (offline).', true);
+      } else {
+        toast('❌ Não foi possível carregar a Tabela Oficial.', true);
+        return;
+      }
+    }
+    fecharModal('modal-perfil');
+    renderGrupos();
+    renderMataMata();
+    initCampeao();
+    rodarChaveamentoCompleto();
+    atualizarCampeaoEPodio();
+    atualizarStatusBar();
+    toast('🏆 Tabela Oficial carregada!');
+  } catch (e) {
+    toast('❌ Erro ao carregar: ' + e.message, true);
+  }
 }
 
 function deletarPerfil(nome) {
   Storage.deletarPerfil(nome);
   renderListaPerfis();
+  atualizarStatusBar();
   toast(`🗑️ Perfil "${nome}" removido.`);
 }
 
@@ -968,12 +1106,9 @@ function deletarPerfil(nome) {
 // ============================================================
 function compartilhar() {
   try {
-    const state = Storage.exportState();
-    const json = JSON.stringify(state);
-    const encoded = btoa(unescape(encodeURIComponent(json)));
-    const url = `${location.origin}${location.pathname}?d=${encoded}`;
+    const url = `${location.origin}${location.pathname}`;
     navigator.clipboard.writeText(url).then(() => {
-      toast('🔗 Link copiado!');
+      toast('🔗 Link copiado! A Tabela Oficial carrega automaticamente para quem abrir.');
     }).catch(() => mostrarModalCompartilhar(url));
   } catch(e) {
     toast('Erro ao gerar link.', true);
@@ -1008,6 +1143,10 @@ function carregarDaURL() {
 //  IMPRESSÃO / RESET / MODAL / TOAST
 // ============================================================
 function imprimir() {
+  // Garante que o Chaveamento esteja renderizado mesmo que o usuário
+  // nunca tenha clicado na aba (senão a impressão sai em branco ali).
+  renderChaveamento();
+
   document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'block');
   window.print();
   setTimeout(() => {
@@ -1028,7 +1167,14 @@ function executarReset() {
   toast('🗑️ Dados apagados com sucesso.');
 }
 
-function fecharModal(id) { document.getElementById(id)?.classList.add('hidden'); }
+function fecharModal(id) {
+  document.getElementById(id)?.classList.add('hidden');
+  if (id === 'modal-perfil') {
+    const input = document.getElementById('perfil-nome-input');
+    if (input) { delete input.dataset.modoCopiaOficial; }
+    window.__copiaOficialPendente = null;
+  }
+}
 
 function toast(msg, erro = false) {
   const container = document.getElementById('toast-container');
@@ -1041,29 +1187,163 @@ function toast(msg, erro = false) {
 }
 
 // ============================================================
-//  SUPABASE STATUS
+//  BARRA DE STATUS — Modo Admin / Visitante + Tabela ativa
+// ============================================================
+function atualizarStatusBar() {
+  const bar        = document.getElementById('status-bar');
+  const dot        = document.getElementById('status-dot-bar');
+  const modoTxt    = document.getElementById('status-modo-txt');
+  const tabelaNome = document.getElementById('status-tabela-nome');
+  const btnToggle  = document.getElementById('btn-admin-toggle');
+
+  if (!bar || !dot || !modoTxt) return;
+
+  const isAdmin = AdminMode.isAdmin();
+  const nomeTabela = Storage.getTabelaAtiva();
+  const estaNaOficial = nomeTabela === Storage.NOME_OFICIAL;
+
+  if (isAdmin) {
+    bar.className = 'status-bar modo-admin';
+    dot.className = 'status-dot-bar admin';
+    modoTxt.textContent = '🔑 MODO ADMIN';
+    document.body.classList.remove('modo-visitante');
+    document.body.classList.add('modo-admin');
+    if (btnToggle) { btnToggle.textContent = '🔓 Sair do Admin'; btnToggle.className = 'btn-admin-login ativo'; }
+  } else {
+    bar.className = 'status-bar';
+    dot.className = 'status-dot-bar visitante';
+    modoTxt.textContent = '👁️ VISITANTE';
+    document.body.classList.remove('modo-admin');
+    document.body.classList.add('modo-visitante');
+    if (btnToggle) { btnToggle.textContent = '🔐 Entrar como Admin'; btnToggle.className = 'btn-admin-login'; }
+  }
+
+  // Bloqueia edição só quando: NÃO é admin E está vendo a Tabela Oficial
+  if (!isAdmin && estaNaOficial) {
+    document.body.classList.add('visualizando-oficial');
+  } else {
+    document.body.classList.remove('visualizando-oficial');
+  }
+
+  if (tabelaNome) {
+    if (estaNaOficial) {
+      tabelaNome.innerHTML = `<strong>🏆 Tabela Oficial</strong>${isAdmin ? ' (editando)' : ''}`;
+    } else if (nomeTabela) {
+      tabelaNome.innerHTML = `<strong>${nomeTabela}</strong>${isAdmin ? '' : ' (sua projeção)'}`;
+    } else {
+      tabelaNome.innerHTML = `Nenhuma tabela carregada`;
+    }
+  }
+
+  const aviso = document.getElementById('status-aviso-leitura');
+  if (aviso) {
+    aviso.textContent = (!isAdmin && estaNaOficial) ? '👁️ Somente visualização' : '';
+  }
+}
+
+function toggleAdmin() {
+  if (AdminMode.isAdmin()) {
+    AdminMode.desativar();
+    atualizarStatusBar();
+    toast('👁️ Saiu do modo admin. Carregando Tabela Oficial...');
+    carregarTabelaOficial();
+  } else {
+    const input = document.getElementById('admin-senha-input');
+    if (input) input.value = '';
+    const erro = document.getElementById('admin-erro');
+    if (erro) erro.style.display = 'none';
+    document.getElementById('modal-admin')?.classList.remove('hidden');
+    setTimeout(() => input?.focus(), 100);
+  }
+}
+
+function tentarLoginAdmin() {
+  const input = document.getElementById('admin-senha-input');
+  const erro  = document.getElementById('admin-erro');
+  const senha = input?.value || '';
+
+  if (AdminMode.ativar(senha)) {
+    fecharModal('modal-admin');
+    atualizarStatusBar();
+    toast('🔑 Modo Admin ativado! Carregando Tabela Oficial para edição...');
+    carregarTabelaOficial();
+  } else {
+    if (erro) erro.style.display = 'block';
+    input?.select();
+  }
+}
+
+function confirmarSalvarOficial() {
+  if (!AdminMode.isAdmin()) { toast('Você precisa estar no modo admin!', true); return; }
+  document.getElementById('modal-salvar-oficial')?.classList.remove('hidden');
+}
+
+async function executarSalvarOficial() {
+  fecharModal('modal-salvar-oficial');
+  toast('☁️ Publicando tabela oficial...');
+  try {
+    const ok = await SupabaseSync.salvarOficial();
+    if (ok) {
+      Storage.setTabelaAtiva('Oficial');
+      atualizarStatusBar();
+      toast('✅ Tabela oficial publicada!');
+    } else {
+      toast('❌ Erro ao publicar. Verifique a conexão.', true);
+    }
+  } catch(e) {
+    toast('❌ Erro: ' + e.message, true);
+  }
+}
+
+// ============================================================
+//  SUPABASE STATUS + CARGA INICIAL
+//  Ao abrir a página: se não há nenhuma tabela local ativa ainda,
+//  carrega a Tabela Oficial automaticamente (comportamento padrão
+//  para visitantes que abrem o link pela primeira vez).
 // ============================================================
 async function verificarSupabase() {
   const dot = document.getElementById('status-dot');
   const txt = document.getElementById('status-txt');
-  if (!dot || !txt) return;
+
+  atualizarStatusBar();
+
   if (!SupabaseSync.isConfigured()) {
-    dot.className = 'status-dot offline';
-    txt.textContent = 'Local apenas';
+    if (dot) dot.className = 'status-dot offline';
+    if (txt) txt.textContent = 'Local apenas';
     return;
   }
+
+  const tabelaAtiva = Storage.getTabelaAtiva();
+  const deveCarregarOficial = !tabelaAtiva; // primeira visita ou nada carregado ainda
+
   try {
     const state = await SupabaseSync.carregar();
     if (state) {
-      dot.className = 'status-dot online';
-      txt.textContent = 'Sincronizado';
-      Storage.importState(state);
-      renderGrupos(); renderMataMata(); initCampeao();
+      if (dot) dot.className = 'status-dot online';
+      if (txt) txt.textContent = 'Conectado';
+
+      if (deveCarregarOficial) {
+        Storage.carregarOficialNaTela(state);
+        renderGrupos();
+        renderMataMata();
+        initCampeao();
+        rodarChaveamentoCompleto();
+        atualizarCampeaoEPodio();
+      } else {
+        // Já tem tabela local sendo usada — só atualiza o cache da Oficial
+        // em segundo plano, sem sobrescrever o que está na tela.
+        Storage.setCacheOficial(state);
+      }
+    } else {
+      if (dot) dot.className = 'status-dot online';
+      if (txt) txt.textContent = 'Conectado';
     }
   } catch {
-    dot.className = 'status-dot offline';
-    txt.textContent = 'Offline';
+    if (dot) dot.className = 'status-dot offline';
+    if (txt) txt.textContent = 'Offline';
   }
+
+  atualizarStatusBar();
 }
 
 // ============================================================
@@ -1160,7 +1440,7 @@ function renderChaveamento() {
   };
 
   // Helper: card de time
-  function bkTime(nome, isVenc, jogoRealizado, vagaLabel) {
+  function bkTime(nome, isVenc, jogoRealizado, vagaLabel, gols, penalti) {
   const flag = nome ? getFlagByName(nome) : '';
   let cls = 'bk-time';
   if (!nome) {
@@ -1171,9 +1451,13 @@ function renderChaveamento() {
     cls += ' bk-perdedor';
   }
   const exibir = nome || vagaLabel || '?';
+  const golLabel = (jogoRealizado && gols !== '' && gols != null)
+    ? `<span class="bk-time-gol">${gols}${penalti !== '' && penalti != null ? `<span class="bk-time-pen">(${penalti}p)</span>` : ''}</span>`
+    : '';
   return `<div class="${cls}">
     ${flag ? `<span class="bk-flag">${flag}</span>` : ''}
     <span class="bk-nome">${exibir}</span>
+    ${golLabel}
   </div>`;
 }
 
@@ -1208,8 +1492,8 @@ else if (num === 101 || num === 102) corCabecalho = coresPorFase.semis[num - 101
 
 return `<div class="bk-jogo${extra ? ' ' + extra : ''}" data-jogo="${num}">
   <div class="bk-num" style="background:${corCabecalho || 'var(--azul)'}">J${num}${placar}</div>
-  ${bkTime(dados.t1, v === dados.t1 && !!v, jogoRealizado, vaga1)}
-  ${bkTime(dados.t2, v === dados.t2 && !!v, jogoRealizado, vaga2)}
+  ${bkTime(dados.t1, v === dados.t1 && !!v, jogoRealizado, vaga1, dados.g1, dados.p1)}
+  ${bkTime(dados.t2, v === dados.t2 && !!v, jogoRealizado, vaga2, dados.g2, dados.p2)}
 </div>`;
 
 }

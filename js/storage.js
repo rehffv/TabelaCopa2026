@@ -1,8 +1,17 @@
 // ============================================================
-//  STORAGE — localStorage primário, Supabase como sync opcional
+//  STORAGE — localStorage para perfis locais + Supabase para a Tabela Oficial
+//
+//  REGRAS:
+//  - "Oficial" é um perfil especial que vive no Supabase.
+//    Qualquer visitante pode VER. Só o admin pode EDITAR e PUBLICAR.
+//  - Perfis locais (criados pelo usuário) ficam só no localStorage
+//    do dispositivo dele. Visitante pode criar/salvar/carregar à vontade.
+//  - "Tabela ativa" é o nome do perfil que está sendo exibido agora
+//    (pode ser "Oficial" ou um perfil local).
 // ============================================================
 const Storage = (() => {
   const PREFIX = 'copa2026_';
+  const NOME_OFICIAL = 'Oficial';
 
   function lsGet(key) {
     try { return JSON.parse(localStorage.getItem(PREFIX + key)); }
@@ -13,13 +22,12 @@ const Storage = (() => {
     catch { return false; }
   }
 
-  // ---------- Resultados ----------
+  // ---------- Resultados (estado de trabalho atual, exibido na tela) ----------
   function getResultados() { return lsGet('resultados') || {}; }
   function setResultado(jogoKey, g1, g2) {
     const r = getResultados();
     r[jogoKey] = { g1, g2, ts: Date.now() };
     lsSet('resultados', r);
-    SupabaseSync.salvar('resultados', r).catch(() => {});
     return r;
   }
 
@@ -29,26 +37,32 @@ const Storage = (() => {
     const mm = getMataMata();
     mm[jogoKey] = { ...data, ts: Date.now() };
     lsSet('matamata', mm);
-    SupabaseSync.salvar('matamata', mm).catch(() => {});
   }
   function setMataMataCompleto(obj) {
     lsSet('matamata', obj);
-    SupabaseSync.salvar('matamata', obj).catch(() => {});
   }
 
   // ---------- Campeão ----------
   function getCampeao() { return lsGet('campeao') || ''; }
   function setCampeao(nome) {
     lsSet('campeao', nome);
-    SupabaseSync.salvar('campeao', nome).catch(() => {});
   }
 
   // ---------- Aba ativa ----------
   function getAbaAtiva() { return lsGet('aba_ativa') || 'grupos'; }
   function setAbaAtiva(aba) { lsSet('aba_ativa', aba); }
 
-  // ---------- Perfil de teste ----------
+  // ---------- Tabela ativa (nome do perfil carregado na tela agora) ----------
+  function getTabelaAtiva() { return lsGet('tabela_ativa') || null; }
+  function setTabelaAtiva(nome) { lsSet('tabela_ativa', nome); }
+
+  // ---------- Cache local da Tabela Oficial (cópia, não editável diretamente) ----------
+  function getCacheOficial() { return lsGet('cache_oficial') || null; }
+  function setCacheOficial(state) { lsSet('cache_oficial', state); }
+
+  // ---------- Perfis locais (criados pelo usuário, qualquer um pode) ----------
   function salvarPerfil(nome) {
+    if (nome === NOME_OFICIAL) return false; // nome reservado
     const perfis = lsGet('perfis') || {};
     perfis[nome] = {
       resultados: getResultados(),
@@ -57,6 +71,23 @@ const Storage = (() => {
       ts: Date.now(),
     };
     lsSet('perfis', perfis);
+    setTabelaAtiva(nome);
+    return true;
+  }
+
+  // Salva um novo perfil local a partir de um estado fornecido (ex: cópia
+  // da Tabela Oficial) sem precisar que esses dados estejam na tela.
+  function salvarPerfilComDados(nome, state) {
+    if (nome === NOME_OFICIAL) return false;
+    const perfis = lsGet('perfis') || {};
+    perfis[nome] = {
+      resultados: state.resultados || {},
+      matamata: state.matamata || {},
+      campeao: state.campeao || '',
+      ts: Date.now(),
+    };
+    lsSet('perfis', perfis);
+    return true;
   }
   function listarPerfis() {
     const perfis = lsGet('perfis') || {};
@@ -69,30 +100,31 @@ const Storage = (() => {
     lsSet('resultados', p.resultados || {});
     lsSet('matamata',   p.matamata   || {});
     lsSet('campeao',    p.campeao    || '');
+    setTabelaAtiva(nome);
     return true;
   }
   function deletarPerfil(nome) {
     const perfis = lsGet('perfis') || {};
     delete perfis[nome];
     lsSet('perfis', perfis);
+    if (getTabelaAtiva() === nome) setTabelaAtiva(null);
   }
 
-  // ---------- Bolão/Palpite ----------
-  function getPalpite() { return lsGet('palpite') || {}; }
-  function setPalpite(jogoKey, data) {
-    const p = getPalpite();
-    p[jogoKey] = { ...data, ts: Date.now() };
-    lsSet('palpite', p);
+  // Carrega a Tabela Oficial na tela
+  function carregarOficialNaTela(state) {
+    lsSet('resultados', state.resultados || {});
+    lsSet('matamata',   state.matamata   || {});
+    lsSet('campeao',    state.campeao    || '');
+    setTabelaAtiva(NOME_OFICIAL);
+    setCacheOficial(state);
   }
-  function setPalpiteCompleto(obj) { lsSet('palpite', obj); }
-  function getCampeaoPalpite() { return lsGet('campeao_palpite') || ''; }
-  function setCampeaoPalpite(nome) { lsSet('campeao_palpite', nome); }
 
   // ---------- Export/Import ----------
   function limparTudo() {
     lsSet('resultados', {});
     lsSet('matamata', {});
     lsSet('campeao', '');
+    setTabelaAtiva(null);
   }
   function exportState() {
     return {
@@ -108,57 +140,128 @@ const Storage = (() => {
   }
 
   return {
+    NOME_OFICIAL,
     getResultados, setResultado,
     getMataMata, setMataMata, setMataMataCompleto,
     getCampeao, setCampeao,
     getAbaAtiva, setAbaAtiva,
+    getTabelaAtiva, setTabelaAtiva,
+    getCacheOficial, setCacheOficial,
     salvarPerfil, listarPerfis, carregarPerfil, deletarPerfil,
-    getPalpite, setPalpite, setPalpiteCompleto,
-    getCampeaoPalpite, setCampeaoPalpite,
+    salvarPerfilComDados,
+    carregarOficialNaTela,
     limparTudo, exportState, importState,
   };
 })();
 
 // ============================================================
-//  SUPABASE SYNC — opcional
+//  MODO ADMIN
+// ============================================================
+const AdminMode = (() => {
+  const ADMIN_TOKEN = '';
+  const SESSION_KEY = '';
+
+  function isAdmin() {
+    return sessionStorage.getItem(SESSION_KEY) === ADMIN_TOKEN;
+  }
+
+  function ativar(senhaDigitada) {
+    if (senhaDigitada === ADMIN_TOKEN) {
+      sessionStorage.setItem(SESSION_KEY, ADMIN_TOKEN);
+      return true;
+    }
+    return false;
+  }
+
+  function desativar() {
+    sessionStorage.removeItem(SESSION_KEY);
+  }
+
+  function getToken() {
+    return isAdmin() ? ADMIN_TOKEN : null;
+  }
+
+  return { isAdmin, ativar, desativar, getToken };
+})();
+
+// ============================================================
+//  SUPABASE SYNC — Tabela Oficial
+//  Leitura: qualquer visitante. Escrita: só via RPC com senha (admin).
 // ============================================================
 const SupabaseSync = (() => {
-  const SUPABASE_URL = '';
-  const SUPABASE_KEY = '';
+  const SUPABASE_URL = 'https://nztcdmidojzhljppkcpp.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_T1IhrWEWcd73Yzc-dhMg5A_65S9ObUv';
 
   function isConfigured() { return SUPABASE_URL !== '' && SUPABASE_KEY !== ''; }
 
-  async function salvar(chave, valor) {
-    if (!isConfigured()) return;
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/copa_estado`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
-        'Prefer': 'resolution=merge-duplicates',
-      },
-      body: JSON.stringify({ id: chave, valor: JSON.stringify(valor) }),
-    });
-    return res.ok;
+  function headersBase() {
+    return {
+      'Content-Type': 'application/json',
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+    };
   }
 
+  // Salva uma chave da Tabela Oficial via função RPC protegida por senha
+  async function salvar(chave, valor) {
+    if (!isConfigured()) return false;
+    if (!AdminMode.isAdmin()) return false;
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/salvar_estado_admin`, {
+        method: 'POST',
+        headers: headersBase(),
+        body: JSON.stringify({
+          p_id: chave,
+          p_valor: JSON.stringify(valor),
+          p_token: AdminMode.getToken(),
+        }),
+      });
+      if (!res.ok) {
+        const errBody = await res.text().catch(() => '');
+        console.error('Erro Supabase RPC:', res.status, errBody);
+        return false;
+      }
+      const ok = await res.json();
+      return ok === true;
+    } catch (e) {
+      console.error('Erro de rede ao salvar no Supabase:', e);
+      return false;
+    }
+  }
+
+  // Carrega a Tabela Oficial do Supabase — disponível para qualquer visitante
   async function carregar() {
     if (!isConfigured()) return null;
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/copa_estado?select=id,valor`, {
-      headers: {
-        'apikey': SUPABASE_KEY,
-        'Authorization': `Bearer ${SUPABASE_KEY}`,
-      }
-    });
-    if (!res.ok) return null;
-    const rows = await res.json();
-    const state = {};
-    rows.forEach(row => {
-      try { state[row.id] = JSON.parse(row.valor); } catch {}
-    });
-    return state;
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/copa_estado?select=id,valor`, {
+        headers: headersBase(),
+      });
+      if (!res.ok) return null;
+      const rows = await res.json();
+      const state = {};
+      rows.forEach(row => {
+        try { state[row.id] = JSON.parse(row.valor); } catch {}
+      });
+      return Object.keys(state).length > 0 ? state : null;
+    } catch (e) {
+      console.error('Erro de rede ao carregar do Supabase:', e);
+      return null;
+    }
   }
 
-  return { isConfigured, salvar, carregar };
+  // Salva o estado atual (tela) no Supabase como Tabela Oficial
+  async function salvarOficial() {
+    if (!AdminMode.isAdmin()) return false;
+    const state = Storage.exportState();
+    const ok1 = await salvar('resultados', state.resultados);
+    const ok2 = await salvar('matamata',   state.matamata);
+    const ok3 = await salvar('campeao',    state.campeao);
+    if (ok1 && ok2 && ok3) {
+      Storage.setCacheOficial(state);
+      return true;
+    }
+    return false;
+  }
+
+  return { isConfigured, salvar, carregar, salvarOficial };
 })();
