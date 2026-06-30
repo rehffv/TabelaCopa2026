@@ -190,7 +190,7 @@ const AdminMode = (() => {
 // ============================================================
 const SupabaseSync = (() => {
   const SUPABASE_URL = 'https://nztcdmidojzhljppkcpp.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_T1IhrWEWcd73Yzc-dhMg5A_65S9ObUv';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56dGNkbWlkb2p6aGxqcHBrY3BwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3Njc3NTksImV4cCI6MjA5ODM0Mzc1OX0.AaK1nH_wrTPX_8LTImj5wfPMYqc616KmF9LUnmgQIHs';
 
   function isConfigured() { return SUPABASE_URL !== '' && SUPABASE_KEY !== ''; }
 
