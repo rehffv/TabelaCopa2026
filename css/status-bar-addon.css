@@ -215,11 +215,16 @@ body.visualizando-oficial .btn-atualizar-oficial {
 
 .btn-perfil-acao.texto {
   width: auto;
-  padding: 4px 10px;
+  min-width: 80px;
+  padding: 6px 12px;
   font-size: 12px;
   font-weight: 700;
-  gap: 4px;
   font-family: 'Nunito', sans-serif;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  box-sizing: border-box;
 }
 
 /* ============================================================

@@ -159,7 +159,7 @@ const Storage = (() => {
 // ============================================================
 const AdminMode = (() => {
   const ADMIN_TOKEN = '';
-  const SESSION_KEY = '';
+  const SESSION_KEY = 'admin123';
 
   function isAdmin() {
     return sessionStorage.getItem(SESSION_KEY) === ADMIN_TOKEN;
