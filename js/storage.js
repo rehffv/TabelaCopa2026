@@ -158,7 +158,7 @@ const Storage = (() => {
 //  MODO ADMIN
 // ============================================================
 const AdminMode = (() => {
-  const ADMIN_TOKEN = '';
+  const ADMIN_TOKEN = 'admin*';
   const SESSION_KEY = 'admin123';
 
   function isAdmin() {

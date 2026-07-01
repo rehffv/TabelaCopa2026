@@ -882,12 +882,11 @@ function renderListaPerfis() {
   const oficialAtiva = tabelaAtiva === Storage.NOME_OFICIAL;
   let html = `
     <div class="perfil-item perfil-oficial${oficialAtiva ? ' perfil-ativa' : ''}">
-      <span class="perfil-nome">🏆 Tabela Oficial${oficialAtiva ? ' (atual)' : ''}</span>
+      <span class="perfil-nome"><img src="assets/icones/prancheta.png" class="icones-btn"> Tabela Oficial${oficialAtiva ? ' Atualizada' : ''}</span>
       <div class="perfil-acoes">
-        <button class="btn-perfil-acao texto carregar" onclick="carregarTabelaOficial()" title="Ver Tabela Oficial">📂 Ver</button>
-        <button class="btn-perfil-acao texto copiar" onclick="abrirCopiarOficial()" title="Criar uma cópia para suas projeções">📑 Copiar</button>
-        ${isAdmin ? `<button class="btn-perfil-acao texto salvar-cima" onclick="confirmarSalvarOficial()" title="Publicar como Oficial">☁️ Publicar</button>` : ''}
-      </div>
+        <button class="btn-perfil-acao carregar" onclick="carregarTabelaOficial()" title="Carregar Tabela Oficial">📂</button>
+        <button class="btn-perfil-acao copiar" onclick="abrirCopiarOficial()" title="Criar uma cópia para editar"><img src="assets/icones/copia-de.png" class="icones-btn"></button>
+        ${isAdmin ? `<button class="btn-perfil-acao salvar-cima" onclick="confirmarSalvarOficial()" title="Publicar Tabela Oficial">☁️</button>` : ''}</div>
     </div>`;
 
   if (saves.length === 0) {
@@ -906,8 +905,8 @@ function renderListaPerfis() {
         <div class="perfil-acoes">
           <button class="btn-perfil-acao carregar"    onclick="carregarPerfilUI('${p.nome}')"     title="Carregar">📂</button>
           <button class="btn-perfil-acao salvar-cima" onclick="salvarPorCima('${p.nome}')"        title="Salvar por cima">💾</button>
-          <button class="btn-perfil-acao editar"      onclick="ativarEditar('${p.nome}')"         title="Renomear">✏️</button>
-          <button class="btn-perfil-acao deletar"     onclick="confirmarDeletarPerfil('${p.nome}')" title="Excluir">🗑️</button>
+          <button class="btn-perfil-acao editar"      onclick="ativarEditar('${p.nome}')"         title="Renomear"><img src="assets/icones/editar-amarelo.png" class="icones-btn"></button>
+          <button class="btn-perfil-acao deletar"     onclick="confirmarDeletarPerfil('${p.nome}')" title="Excluir"><img src="assets/icones/lixeira.png" class="icones-btn"></button>
         </div>
       </div>`;
       }).join('');
@@ -979,7 +978,7 @@ function salvarPerfil() {
     window.__copiaOficialPendente = null;
     if (input) input.value = '';
     renderListaPerfis();
-    toast(`📑 Cópia "${nome}" criada a partir da Tabela Oficial! Carregando...`);
+    toast(`<img src="assets/icones/copia-de.png" class="icones-btn"> Cópia "${nome}" criada a partir da Tabela Oficial! Carregando...`);
     carregarPerfilUI(nome);
     return;
   }
@@ -1088,7 +1087,7 @@ async function carregarTabelaOficial() {
     rodarChaveamentoCompleto();
     atualizarCampeaoEPodio();
     atualizarStatusBar();
-    toast('🏆 Tabela Oficial carregada!');
+    toast('📋 Tabela Oficial carregada!');
   } catch (e) {
     toast('❌ Erro ao carregar: ' + e.message, true);
   }
@@ -1140,20 +1139,8 @@ function carregarDaURL() {
 }
 
 // ============================================================
-//  IMPRESSÃO / RESET / MODAL / TOAST
+//  RESET / MODAL / TOAST
 // ============================================================
-function imprimir() {
-  // Garante que o Chaveamento esteja renderizado mesmo que o usuário
-  // nunca tenha clicado na aba (senão a impressão sai em branco ali).
-  renderChaveamento();
-
-  document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'block');
-  window.print();
-  setTimeout(() => {
-    document.querySelectorAll('.tab-content').forEach(el => el.style.display = '');
-    document.querySelector('.tab-content.active')?.style.removeProperty('display');
-  }, 1000);
-}
 
 function confirmarReset() { document.getElementById('modal-reset')?.classList.remove('hidden'); }
 
@@ -1205,17 +1192,17 @@ function atualizarStatusBar() {
   if (isAdmin) {
     bar.className = 'status-bar modo-admin';
     dot.className = 'status-dot-bar admin';
-    modoTxt.textContent = '🔑 MODO ADMIN';
+    modoTxt.textContent = 'MODO ADMIN';
     document.body.classList.remove('modo-visitante');
     document.body.classList.add('modo-admin');
-    if (btnToggle) { btnToggle.textContent = '🔓 Sair do Admin'; btnToggle.className = 'btn-admin-login ativo'; }
+    if (btnToggle) { btnToggle.textContent = '🔓 Sair Admin'; btnToggle.className = 'btn-admin-login ativo'; }
   } else {
     bar.className = 'status-bar';
     dot.className = 'status-dot-bar visitante';
-    modoTxt.textContent = '👁️ VISITANTE';
+    modoTxt.textContent = ' VISITANTE ';
     document.body.classList.remove('modo-admin');
     document.body.classList.add('modo-visitante');
-    if (btnToggle) { btnToggle.textContent = '🔐 Entrar como Admin'; btnToggle.className = 'btn-admin-login'; }
+    if (btnToggle) { btnToggle.textContent = '🔐 Entrar Admin'; btnToggle.className = 'btn-admin-login'; }
   }
 
   // Bloqueia edição só quando: NÃO é admin E está vendo a Tabela Oficial
@@ -1227,9 +1214,9 @@ function atualizarStatusBar() {
 
   if (tabelaNome) {
     if (estaNaOficial) {
-      tabelaNome.innerHTML = `<strong>🏆 Tabela Oficial</strong>${isAdmin ? ' (editando)' : ''}`;
+      tabelaNome.innerHTML = `<strong>Tabela Oficial Atualizada </strong>${isAdmin ? ' - editando ' : ''}`;
     } else if (nomeTabela) {
-      tabelaNome.innerHTML = `<strong>${nomeTabela}</strong>${isAdmin ? '' : ' (sua projeção)'}`;
+      tabelaNome.innerHTML = `<strong>${nomeTabela}</strong>${isAdmin ? '' : ' 🎯 Seu Palpite'}`;
     } else {
       tabelaNome.innerHTML = `Nenhuma tabela carregada`;
     }
@@ -1237,7 +1224,7 @@ function atualizarStatusBar() {
 
   const aviso = document.getElementById('status-aviso-leitura');
   if (aviso) {
-    aviso.textContent = (!isAdmin && estaNaOficial) ? '👁️ Somente visualização' : '';
+    aviso.textContent = (!isAdmin && estaNaOficial) ? ' 👁️ Somente visualização ' : '';
   }
 }
 
@@ -1245,7 +1232,7 @@ function toggleAdmin() {
   if (AdminMode.isAdmin()) {
     AdminMode.desativar();
     atualizarStatusBar();
-    toast('👁️ Saiu do modo admin. Carregando Tabela Oficial...');
+    toast('👁️ Saiu do modo admin.');
     carregarTabelaOficial();
   } else {
     const input = document.getElementById('admin-senha-input');

@@ -164,7 +164,7 @@ body {
 ============================================================ */
 .toolbar {
   background: #fff;
-  padding: 0 16px;
+  padding: 0 12px;
   display: flex;
   align-items: center;
   gap: 2px;
@@ -177,26 +177,29 @@ body {
   border: none;
   color: var(--texto-suave);
   font-family: 'Nunito', sans-serif;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
-  padding: 14px 18px;
+  padding: 12px 0;
   cursor: pointer;
   border-bottom: 3px solid transparent;
   margin-bottom: -2px;
   transition: all 0.2s;
   white-space: nowrap;
   border-radius: var(--radius) var(--radius) 0 0;
-  min-width: 168px;
+  flex: 1 1 0;
   text-align: center;
+  min-width: 0;
 }
 .tab-btn:hover { color: var(--verde); background: var(--verde-light); }
 .tab-btn.active { color: var(--verde); border-bottom-color: var(--verde); }
-.toolbar-spacer { flex: 1; min-width: 8px; }
+.toolbar-spacer { display: none; }
 .toolbar-actions {
   display: flex;
   gap: 6px;
   padding: 8px 0;
   flex-wrap: wrap;
+  width: 100%;
+  justify-content: stretch;
 }
 
 .btn-toolbar {
@@ -206,7 +209,7 @@ body {
   font-family: 'Nunito', sans-serif;
   font-size: 13px;
   font-weight: 700;
-  padding: 7px 14px;
+  padding: 7px 10px;
   cursor: pointer;
   border-radius: var(--radius);
   transition: all 0.18s;
@@ -215,17 +218,28 @@ body {
   justify-content: center;
   gap: 5px;
   white-space: nowrap;
-  min-width: 118px;
+  flex: 1 1 0;
+  min-width: 0;
+  height: 36px;
+  box-sizing: border-box;
+  line-height: 1;
+  vertical-align: middle;
 }
 .btn-toolbar:hover {
-  background: var(--verde-light);
-  border-color: var(--verde);
-  color: var(--verde-esc);
+  background: var(--azul-pas);
+  border-color: var(--azul);
+  color: #29357c;;
 }
 .btn-toolbar.danger:hover {
   background: #fff0f0;
   border-color: var(--danger);
   color: var(--danger);
+}
+
+.icones-btn {
+  width:  17px;
+  height: 17px;
+  vertical-align: middle;
 }
 
 /* ============================================================
@@ -429,10 +443,10 @@ body {
   
 }
 .jogo-linha {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 6px;
+  gap: 4px;
   padding: 0 6px;
 }
 .jogo-time {
@@ -441,10 +455,9 @@ body {
   color: var(--texto);
   display: flex;
   align-items: center;
-  gap: 5px;
-  flex: 1 1 0;
-  white-space: nowrap;
+  gap: 4px;
   min-width: 0;
+  overflow: hidden;
 }
 .jogo-time.right { justify-content: flex-end; text-align: right; }
 .jogo-time.left  { justify-content: flex-start; text-align: left; }
@@ -774,9 +787,12 @@ body {
   justify-content: center;
   transition: all 0.15s;
 }
-.btn-perfil-acao.salvar-cima:hover { background: var(--azul-pas); border-color: var(--azul); }
-.btn-perfil-acao.carregar:hover   { background: var(--verde-pas); border-color: var(--verde); }
-.btn-perfil-acao.deletar:hover    { background: #fff0f0; border-color: var(--danger); }
+.btn-perfil-acao.salvar-cima:hover { background: var(--azul-pas);          border-color: var(--azul); }
+.btn-perfil-acao.carregar:hover    { background: var(--verde-pas);          border-color: var(--verde); }
+.btn-perfil-acao.copiar:hover      { background: rgba(156,39,176,0.08);     border-color: #9C27B0; }
+.btn-perfil-acao.editar:hover      { background: rgba(255,152,0,0.10);      border-color: #FF9800; }
+.btn-perfil-acao.deletar:hover     { background: #fff0f0;                   border-color: var(--danger); }
+
 
 /* ============================================================
    TOAST / MODAL
@@ -1161,14 +1177,13 @@ body {
   .grupos-grid { grid-template-columns: 1fr; gap: 10px; }
   .mm-jogos-grid.cols-4,
   .mm-jogos-grid.cols-2 { grid-template-columns: 1fr; }
-  .toolbar-actions { flex-wrap: wrap; gap: 4px; }
-  .btn-toolbar { min-width: 0; flex: 1 1 calc(50% - 4px); }
-  .tab-btn { min-width: 0; flex: 1 1 auto; padding: 12px 8px; font-size: 13px; }
   .titulo-copa { font-size: clamp(40px, 14vw, 72px); }
   .campeao-input { width: 200px; font-size: 20px; }
-  .jogo-time  { font-size: 14px; }
-  .placar-campo { width: 32px; height: 32px; font-size: 17px; }
+  .jogo-time  { font-size: 11px; }
+  .placar-campo { width: 26px; height: 26px; font-size: 14px; }
   .classif-row-item { font-size: 13px; padding: 7px 10px; }
   .mm-placar  { width: 34px; height: 34px; font-size: 17px; }
   .mm-time-input { font-size: 15px; }
+  .btn-toolbar { font-size: 12px; height: 32px; }
+  .tab-btn { font-size: 12px; padding: 10px 4px; }
 }
