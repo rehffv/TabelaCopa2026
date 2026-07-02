@@ -55,18 +55,15 @@
   font-size: 11px;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  flex-wrap: nowrap;
 }
 .status-tabela strong { color: var(--amarelo); }
 .status-bar.modo-admin .status-tabela strong { color: #FFE866; }
 
 #status-modo-txt { letter-spacing: 0.5px; font-size: 12px; }
 
-/* Aviso de somente visualização */
 .status-aviso-leitura {
   font-size: 10px;
   font-style: italic;
@@ -74,32 +71,37 @@
   white-space: nowrap;
 }
 
-/* Direita da barra: todos os botões com mesma altura e estilo base */
+/* Botão atualizar — circular, tamanho fixo garantido */
+.btn-atualizar-oficial {
+  background: rgba(100,181,246,0.12);
+  border: 1.5px solid rgba(100,181,246,0.35);
+  color: #64B5F6;
+  border-radius: 50%;
+  width: 17.5px;
+  height: 17.5px;
+  min-width: 17.5x;
+  min-height: 17.5px;
+  padding: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  transition: all 0.18s;
+}
+.btn-atualizar-oficial:hover { background: rgba(100,181,246,0.22); }
+.btn-atualizar-oficial.spinning { animation: spinAtualizar 0.6s linear; }
+@keyframes spinAtualizar { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+body.visualizando-oficial .btn-atualizar-oficial { display: inline-flex; }
+
 .status-bar-dir {
   display: flex;
   gap: 6px;
   align-items: center;
-  flex-wrap: wrap;
-}
-
-/* Base comum para todos os botões da status-bar */
-.btn-admin-login,
-.btn-atualizar-oficial,
-.btn-salvar-oficial {
-  font-family: 'Nunito', sans-serif;
-  font-size: 12px;
-  font-weight: 700;
-  padding: 6px 12px;
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: all 0.18s;
-  white-space: nowrap;
-  height: 32px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  box-sizing: border-box;
+  flex-shrink: 0;
 }
 
 /* Botão Admin */
@@ -107,7 +109,20 @@
   background: rgba(255,255,255,0.08);
   border: 1.5px solid rgba(255,255,255,0.2);
   color: rgba(255,255,255,0.75);
+  font-family: 'Nunito', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
   width: 115px;
+  height: 32px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.18s;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  box-sizing: border-box;
 }
 .btn-admin-login:hover {
   background: rgba(255,232,102,0.15);
@@ -120,114 +135,67 @@
   color: var(--amarelo);
 }
 
-/* Modo admin: barra com destaque amarelo */
 .status-bar.modo-admin { background: #2a2200; border-bottom-color: var(--amarelo); }
 
-/* Botão Publicar Oficial — só aparece no modo admin */
+/* Botão Publicar Oficial */
 .btn-salvar-oficial {
   background: var(--amarelo);
   border: none;
   color: #1a1200;
+  font-family: 'Nunito', sans-serif;
+  font-size: 12px;
   font-weight: 800;
-  display: none;
   width: 115px;
+  height: 32px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 0.18s;
+  white-space: nowrap;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  box-sizing: border-box;
 }
 .btn-salvar-oficial:hover { background: #ffe033; }
 .status-bar.modo-admin .btn-salvar-oficial { display: inline-flex; }
 
-/* Botão Atualizar — só aparece quando visualizando a Oficial como visitante */
-.btn-atualizar-oficial {
-  background: rgba(100,181,246,0.12);
-  border: 1.5px solid rgba(100,181,246,0.35);
-  color: #64B5F6;
-  display: none;
-  border-radius: 50%;
-  width: 19px;
-  height: 19px;
-  padding: 0;
-
-}
-.btn-atualizar-oficial:hover { background: rgba(100,181,246,0.22); }
-.btn-atualizar-oficial.spinning { animation: spinAtualizar 0.6s linear; }
-@keyframes spinAtualizar { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-body.visualizando-oficial .btn-atualizar-oficial { display: inline-flex; }
-
-/* Bloqueio de edição na Tabela Oficial */
-body.visualizando-oficial .placar-campo,
-body.visualizando-oficial .mm-placar,
-body.visualizando-oficial .mm-select,
-body.visualizando-oficial .mm-pen-input {
-  pointer-events: none;
-  opacity: 0.85;
-}
-body.visualizando-oficial .btn-limpar-jogo-grupo,
-body.visualizando-oficial .btn-limpar-grupo,
-body.visualizando-oficial .btn-rodada-acao.danger,
-body.visualizando-oficial .btn-secao-acao.danger,
-body.visualizando-oficial .btn-toolbar.danger,
-body.visualizando-oficial .btn-refresh-jogo,
-body.visualizando-oficial .btn-limpar-jogo { display: none; }
-
 /* ============================================================
-   PERFIL OFICIAL — destaque especial na lista
-============================================================ */
-.perfil-oficial {
-  background: linear-gradient(135deg, rgba(255,232,102,0.15), rgba(255,232,102,0.05));
-  border-radius: var(--radius);
-  padding: 10px;
-  margin-bottom: 10px;
-  border: 1.5px solid rgba(201,168,0,0.3);
-}
-.perfil-oficial .perfil-nome { color: var(--amarelo-esc); font-size: 15px; }
-.perfil-item.perfil-ativa { background: var(--verde-pas); border-radius: var(--radius); padding-left: 8px; padding-right: 8px; }
-.perfil-item.perfil-ativa .perfil-nome { color: var(--verde-esc); }
-
-.btn-perfil-acao.texto {
-  width: auto;
-  min-width: 70px;
-  padding: 5px 10px;
-  font-size: 12px;
-  font-weight: 700;
-  gap: 4px;
-  font-family: 'Nunito', sans-serif;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  box-sizing: border-box;
-}
-
-/* ============================================================
-   GOLS POR TIME NO CHAVEAMENTO
-============================================================ */
-.bk-time-gol {
-  font-size: 11px;
-  font-weight: 800;
-  color: var(--texto);
-  flex-shrink: 0;
-  display: flex;
-  align-items: baseline;
-  gap: 3px;
-  padding-left: 4px;
-}
-.bk-vencedor .bk-time-gol { color: var(--verde-esc); }
-.bk-perdedor .bk-time-gol { color: var(--cinza-3); }
-.bk-time-pen { font-size: 8px; font-weight: 700; color: var(--texto-suave); opacity: 0.8; }
-.bk-jogo-final .bk-time-gol { font-size: 13px; }
-
-/* ============================================================
-   RESPONSIVO MOBILE — status-bar
+   MOBILE — status-bar em duas linhas
 ============================================================ */
 @media (max-width: 600px) {
-  .status-bar { padding: 6px 10px; gap: 6px; }
-  .status-bar-esq { gap: 6px; }
-  #status-modo-txt { font-size: 11px; }
-  .status-tabela { font-size: 10px; }
+  .status-bar {
+    padding: 6px 10px;
+    gap: 4px;
+  }
+
+  /* Linha 1: modo (VISITANTE/ADMIN) + botões de ação (direita) */
+  .status-bar-esq {
+    order: 1;
+    flex: 0 0 auto;
+  }
+  .status-bar-dir {
+    order: 2;
+    flex: 0 0 auto;
+  }
+
+  /* Linha 2: tabela ativa + botão atualizar — ocupa largura toda */
+  .status-tabela {
+    order: 3;
+    flex: 0 0 100%;
+    font-size: 10px;
+  }
+
+  /* Esconde o aviso "Somente visualização" no mobile pra não abarrotar */
+  .status-aviso-leitura { display: none; }
+
+  /* Botões menores no mobile */
   .btn-admin-login,
-  .btn-atualizar-oficial,
   .btn-salvar-oficial {
+    width: auto;
+    min-width: 90px;
     font-size: 11px;
-    padding: 5px 8px;
     height: 28px;
+    padding: 0 10px;
   }
 }
-
