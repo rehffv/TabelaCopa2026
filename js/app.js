@@ -978,7 +978,7 @@ function salvarPerfil() {
     window.__copiaOficialPendente = null;
     if (input) input.value = '';
     renderListaPerfis();
-    toast(`<img src="assets/icones/copia-de.png" class="icones-btn"> Cópia "${nome}" criada a partir da Tabela Oficial! Carregando...`);
+    toast(`📑 Cópia "${nome}" criada a partir da Tabela Oficial! Carregando...`);
     carregarPerfilUI(nome);
     return;
   }
